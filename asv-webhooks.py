@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 from subprocess import check_call
 from multiprocessing import Process
-
+import requests
 import json
 import os
 import shutil
@@ -10,15 +10,22 @@ class ASVProcess(Process):
     def __init__(self, directory, event_data):
         super(ASVProcess, self).__init__()
         self._dir = directory
-        self._server = 'powertrip.mggen.nau.edu:5000'
         self._pull_request = event_data['pull_request']
         self._base_commit = self._pull_request['base']['sha']
         self._branch_ref = self._pull_request['head']['ref']
 
+        run_dir = os.path.join(self._dir, 'runs')
+        self._owner = self._pull_request['head']['repo']['owner']['login']
+        self._branch_dir = os.path.join(run_dir, self._owner, self._branch_ref)
+
+        self._server = os.environ['WEBHOOKS_SERVER']
+        self._comment_username = os.environ['GITHUB_USER']
+        self._comment_password = os.environ['GITHUB_PASS']
+
     def run(self):
-       self._run_asv(self._base_commit, self._branch_ref)
+        self._run_asv()
        
-    def _run_asv(self, start_commit, end_commit):
+    def _run_asv(self):
         self._set_up_environment()
         commit_range = self._base_commit + '..' + self._branch_ref
         asv_command = ['asv', 'run', commit_range]
@@ -26,31 +33,37 @@ class ASVProcess(Process):
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
         os.chdir(self._dir)
+        self._report_run_finished()
 
     def _set_up_environment(self):
-        run_dir = os.path.join(self._dir, 'runs')
         clone_url = self._pull_request['base']['repo']['clone_url']
-        owner = self._pull_request['head']['repo']['owner']['login']
 
         with open('asv_conf_template.json') as asv_fp:
             asv_config = json.load(asv_fp)
         asv_config['repo'] = clone_url
         asv_config['branches'] = [self._branch_ref]
 
-        branch_dir = os.path.join(run_dir, owner, self._branch_ref)
-        if not os.path.exists(branch_dir):
-            os.makedirs(branch_dir)
-        benchmark_dir = os.path.join(branch_dir, 'benchmarks')
+        if not os.path.exists(self._branch_dir):
+            os.makedirs(self._branch_dir)
+        benchmark_dir = os.path.join(self._branch_dir, 'benchmarks')
         if os.path.exists(benchmark_dir):
             shutil.rmtree(benchmark_dir)
         shutil.copytree('benchmarks', benchmark_dir)
-        os.chdir(branch_dir)
+        os.chdir(self._branch_dir)
         with open('asv.conf.json', 'w') as asv_fp:
             json.dump(asv_config, asv_fp, indent=2, sort_keys=True)
 
-    def report_run_finished(self):
-        pass
-
+    def _report_run_finished(self):
+        link_parts = (self._server, 'runs', self._owner, self._branch_ref,
+                      'html', 'index.html')
+        result_link = os.sep.join(link_parts)
+        comments_url = self._pull_request['comments_url']
+        comment_body = ("## Automated report from asv run\nBenchmark run "
+                        "completed successfully. Results available at\n[%s]"
+                        "(%s)") % (result_link, result_link)
+        params = {'body': comment_body}
+        requests.post(comments_url, data=json.dumps(params),
+                      auth=(self._comment_username, self._comment_password))
 
 app = Flask(__name__, static_url_path='')
 
