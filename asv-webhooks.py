@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify, send_from_directory
 from subprocess import check_call
 from multiprocessing import Process
 import requests
 import json
 import os
 import shutil
+
+from tornado.ioloop import IOLoop
+from tornado.web import RequestHandler, StaticFileHandler, Application, url
 
 class ASVProcess(Process):
     def __init__(self, directory, event_data):
@@ -65,20 +67,22 @@ class ASVProcess(Process):
         requests.post(comments_url, data=json.dumps(params),
                       auth=(self._comment_username, self._comment_password))
 
-app = Flask(__name__, static_url_path='')
 
-@app.route('/runs/<path:path>')
-def results(path):
-    return send_from_directory('runs', path)
+class WebhooksHandler(RequestHandler):
+    
+    def post(self):
+        event_data = json.loads(self.request.body.decode('utf-8'))
 
-@app.route("/webhooks", methods=['POST'])
-def handle_webhooks():
-    # hand off to a new process. This is necessary since we need to change
-    # the working directory for ASV to work, but we also need to be able
-    # to handle concurrent ASV runs.
-    event_data = request.get_json(jsonify(force=True))
-    asv_proc = ASVProcess(os.getcwd(), event_data).start()
-    return "OK"
+        # hand off to a new process. This is necessary since we need to change
+        # the working directory for ASV to work, but we also need to be able
+        # to handle concurrent ASV runs.
+        asv_proc = ASVProcess(os.getcwd(), event_data).start()
+
+app = Application([
+    url(r"/webhooks", WebhooksHandler),
+    url(r"/runs/(.*)", StaticFileHandler, { 'path': 'runs' }),
+    ])
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=True)
+    app.listen(5000)
+    IOLoop.current().start()
