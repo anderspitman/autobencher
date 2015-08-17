@@ -11,6 +11,7 @@ from tornado.web import RequestHandler, StaticFileHandler, Application, url
 class ASVProcess(Process):
     def __init__(self, directory, event_data):
         super(ASVProcess, self).__init__()
+        self._event_data = event_data
         self._dir = directory
         self._pull_request = event_data['pull_request']
         self._base_commit = self._pull_request['base']['sha']
@@ -38,7 +39,7 @@ class ASVProcess(Process):
         self._report_run_finished()
 
     def _set_up_environment(self):
-        clone_url = self._pull_request['base']['repo']['clone_url']
+        clone_url = self._pull_request['head']['repo']['clone_url']
 
         with open('asv_conf_template.json') as asv_fp:
             asv_config = json.load(asv_fp)
@@ -53,7 +54,13 @@ class ASVProcess(Process):
         shutil.copytree('benchmarks', benchmark_dir)
         os.chdir(self._branch_dir)
         with open('asv.conf.json', 'w') as asv_fp:
-            json.dump(asv_config, asv_fp, indent=2, sort_keys=True)
+            json.dump(asv_config, asv_fp, indent=4, sort_keys=True)
+
+        # log webhooks request
+        with open('webhooks_request.json', 'w') as webhooks_request_fp:
+            json.dump(self._event_data, webhooks_request_fp, indent=4,
+                      sort_keys=True)
+
 
     def _report_run_finished(self):
         link_parts = (self._server, 'runs', self._owner, self._branch_ref,
@@ -75,8 +82,10 @@ class WebhooksHandler(RequestHandler):
 
         # hand off to a new process. This is necessary since we need to change
         # the working directory for ASV to work, but we also need to be able
-        # to handle concurrent ASV runs.
-        if 'pull_request' in event_data:
+        # to handle concurrent ASV runs. Only handle pull requests that are
+        # being opened or synchronized for now
+        if ('pull_request' in event_data and
+            event_data['action'] in ('opened', 'synchronize')):
             asv_proc = ASVProcess(os.getcwd(), event_data).start()
 
 app = Application([
