@@ -76,7 +76,8 @@ class WebhooksHandler(RequestHandler):
         # hand off to a new process. This is necessary since we need to change
         # the working directory for ASV to work, but we also need to be able
         # to handle concurrent ASV runs.
-        asv_proc = ASVProcess(os.getcwd(), event_data).start()
+        if 'pull_request' in event_data:
+            asv_proc = ASVProcess(os.getcwd(), event_data).start()
 
 app = Application([
     url(r"/webhooks", WebhooksHandler),
