@@ -55,10 +55,11 @@ class ASVProcess(Process):
         asv_config['repo'] = self._clone_url
         asv_config['branches'] = [self._branch_ref]
 
-        benchmark_dir = os.path.join(self._branch_dir, 'benchmarks')
-        if os.path.exists(benchmark_dir):
-            shutil.rmtree(benchmark_dir)
-        shutil.copytree('benchmarks', benchmark_dir)
+        benchmark_dest = os.path.join(self._branch_dir, 'benchmarks')
+        if os.path.exists(benchmark_dest):
+            shutil.rmtree(benchmark_dest)
+        benchmark_source = os.path.join(self._source_repo, 'benchmarks')
+        shutil.copytree(benchmark_source, benchmark_dest)
         os.chdir(self._branch_dir)
         with open('asv.conf.json', 'w') as asv_fp:
             json.dump(asv_config, asv_fp, indent=4, sort_keys=True)
