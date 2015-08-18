@@ -43,7 +43,7 @@ class ASVProcess(Process):
     def _set_up_environment(self):
         clone_url = self._pull_request['head']['repo']['clone_url']
 
-        with open('asv_conf_template.json') as asv_fp:
+        with open('asv.conf.json') as asv_fp:
             asv_config = json.load(asv_fp)
         asv_config['repo'] = clone_url
         asv_config['branches'] = [self._branch_ref]
