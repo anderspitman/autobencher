@@ -21,7 +21,8 @@ class ASVProcess(Process):
         self._owner = self._pull_request['head']['repo']['owner']['login']
         self._branch_dir = os.path.join(run_dir, self._owner, self._branch_ref)
 
-        self._server = os.environ['WEBHOOKS_SERVER']
+        self._hostname= os.environ['HOSTNAME']
+        self._port = os.environ['PORT']
         self._comment_username = os.environ['GITHUB_USER']
         self._comment_password = os.environ['GITHUB_PASS']
 
@@ -64,7 +65,8 @@ class ASVProcess(Process):
 
 
     def _report_run_finished(self):
-        link_parts = (self._server, 'runs', self._owner, self._branch_ref,
+        server = self._hostname + ':' + self._port
+        link_parts = (server, 'runs', self._owner, self._branch_ref,
                       'html', 'index.html')
         result_link = os.sep.join(link_parts)
         comments_url = self._pull_request['comments_url']
@@ -95,5 +97,5 @@ app = Application([
     ])
 
 if __name__ == "__main__":
-    app.listen(5000)
+    app.listen(int(os.environ['PORT']))
     IOLoop.current().start()
