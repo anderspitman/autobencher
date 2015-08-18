@@ -8,6 +8,7 @@ import shutil
 from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, StaticFileHandler, Application, url
 
+
 class ASVProcess(Process):
     def __init__(self, directory, event_data):
         super(ASVProcess, self).__init__()
@@ -20,6 +21,7 @@ class ASVProcess(Process):
         run_dir = os.path.join(self._dir, 'runs')
         self._owner = self._pull_request['head']['repo']['owner']['login']
         self._branch_dir = os.path.join(run_dir, self._owner, self._branch_ref)
+        self._clone_url = self._pull_request['head']['repo']['clone_url']
 
         self._hostname= os.environ['HOSTNAME']
         self._port = os.environ['PORT']
@@ -41,15 +43,18 @@ class ASVProcess(Process):
         self._report_run_finished()
 
     def _set_up_environment(self):
-        clone_url = self._pull_request['head']['repo']['clone_url']
-
-        with open('asv.conf.json') as asv_fp:
-            asv_config = json.load(asv_fp)
-        asv_config['repo'] = clone_url
-        asv_config['branches'] = [self._branch_ref]
 
         if not os.path.exists(self._branch_dir):
             os.makedirs(self._branch_dir)
+
+        self._set_up_repo()
+
+        source_config = os.path.join(self._source_repo, 'asv.conf.json')
+        with open(source_config) as asv_fp:
+            asv_config = json.load(asv_fp)
+        asv_config['repo'] = self._clone_url
+        asv_config['branches'] = [self._branch_ref]
+
         benchmark_dir = os.path.join(self._branch_dir, 'benchmarks')
         if os.path.exists(benchmark_dir):
             shutil.rmtree(benchmark_dir)
@@ -62,6 +67,20 @@ class ASVProcess(Process):
         with open('webhooks_request.json', 'w') as webhooks_request_fp:
             json.dump(self._event_data, webhooks_request_fp, indent=4,
                       sort_keys=True)
+
+    def _set_up_repo(self):
+        self._source_repo = os.path.join(self._branch_dir, 'source_repo')
+        if os.path.exists(self._source_repo):
+            cur_dir = os.getcwd()
+            os.chdir(self._source_repo)
+            pull_command = ['git', 'pull']
+            check_call(pull_command)
+            os.chdir(cur_dir)
+        else:
+            branch_name = self._pull_request['head']['ref']
+            clone_command = ['git', 'clone', '-b', branch_name,
+                             self._clone_url, self._source_repo]
+            check_call(clone_command)
 
 
     def _report_run_finished(self):
