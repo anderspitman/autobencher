@@ -35,7 +35,7 @@ class ASVProcess(Process):
         self._set_up_environment()
         # include 1 previous commit from master so we can see any regressions
         commit_range = self._base_commit + '~1..' + self._branch_ref
-        asv_command = ['asv', 'run', commit_range]
+        asv_command = ['asv', 'run', '--steps', '10', commit_range]
         check_call(asv_command)
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
