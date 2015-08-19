@@ -89,13 +89,31 @@ class ASVProcess(Process):
         link_parts = (server, 'runs', self._owner, self._branch_ref,
                       'html', 'index.html')
         result_link = os.sep.join(link_parts)
-        comments_url = self._pull_request['comments_url']
+        self._comments_url = self._pull_request['comments_url']
+
+        self._delete_old_comments()
+
         comment_body = ("## Automated report from asv run\nBenchmark run "
                         "completed successfully. Results available at\n[%s]"
                         "(%s)") % (result_link, result_link)
         params = {'body': comment_body}
-        requests.post(comments_url, data=json.dumps(params),
+        requests.post(self._comments_url, data=json.dumps(params),
                       auth=(self._comment_username, self._comment_password))
+
+    def _delete_old_comments(self):
+        comments = self._get_comments()
+        for comment in comments:
+            author = comment['user']['login']
+            if author == self._comment_username:
+                self._delete_comment(comment['url'])
+
+    def _get_comments(self):
+        response = requests.get(self._comments_url)
+        return response.json()
+
+    def _delete_comment(self, comment_url):
+        requests.delete(comment_url,
+                        auth=(self._comment_username, self._comment_password))
 
 
 class WebhooksHandler(RequestHandler):
