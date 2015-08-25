@@ -17,9 +17,15 @@ class WebhooksHandler(RequestHandler):
         # being opened or synchronized for now
         if ('pull_request' in event_data and
             event_data['action'] in ('opened', 'synchronize')):
+            repo_url = event_data['pull_request']['head']['repo']['clone_url']
             runner = BenchmarkRunner.makeBenchmarkRunner(os.getcwd(),
                                                          event_data)
             runner.run()
+
+        # log webhooks request
+        with open('webhooks_request.json', 'w') as webhooks_request_fp:
+            json.dump(event_data, webhooks_request_fp, indent=4,
+                      sort_keys=True)
 
 app = Application([
     url(r"/webhooks", WebhooksHandler),

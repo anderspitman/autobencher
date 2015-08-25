@@ -64,7 +64,11 @@ class ASVProcess(Process):
         if not os.path.exists(self._branch_dir):
             os.makedirs(self._branch_dir)
 
-        self._set_up_repo()
+        self._source_repo = os.path.join(self._branch_dir, 'source_repo')
+        branch_name = self._pull_request['head']['ref']
+        self._repo = SourceRepository.makeRepository(self._clone_url,
+                                                     branch_name,
+                                                     self._source_repo)
 
         source_config = os.path.join(self._source_repo, 'asv.conf.json')
         with open(source_config) as asv_fp:
@@ -85,20 +89,6 @@ class ASVProcess(Process):
         with open('webhooks_request.json', 'w') as webhooks_request_fp:
             json.dump(self._event_data, webhooks_request_fp, indent=4,
                       sort_keys=True)
-
-    def _set_up_repo(self):
-        self._source_repo = os.path.join(self._branch_dir, 'source_repo')
-        if os.path.exists(self._source_repo):
-            cur_dir = os.getcwd()
-            os.chdir(self._source_repo)
-            pull_command = ['git', 'pull']
-            check_call(pull_command)
-            os.chdir(cur_dir)
-        else:
-            branch_name = self._pull_request['head']['ref']
-            clone_command = ['git', 'clone', '-b', branch_name,
-                             self._clone_url, self._source_repo]
-            check_call(clone_command)
 
 
     def _report_run_finished(self):
@@ -133,3 +123,24 @@ class ASVProcess(Process):
                         auth=(self._comment_username, self._comment_password))
 
 
+class SourceRepository(metaclass=ABCMeta):
+    @classmethod
+    def makeRepository(self, url, branch, directory):
+        return GitRepository(url, branch, directory)
+
+    @abstractmethod
+    def __init__(self):
+        pass
+
+
+class GitRepository(SourceRepository):
+    def __init__(self, url, branch, directory):
+        if os.path.exists(directory):
+            cur_dir = os.getcwd()
+            os.chdir(directory)
+            pull_command = ['git', 'pull']
+            check_call(pull_command)
+            os.chdir(cur_dir)
+        else:
+            clone_command = ['git', 'clone', '-b', branch, url, directory]
+            check_call(clone_command)
