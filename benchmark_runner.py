@@ -40,10 +40,19 @@ class ASVProcess(Process):
         self._branch_dir = os.path.join(run_dir, self._owner, self._branch_ref)
         self._clone_url = self._pull_request['head']['repo']['clone_url']
 
-        self._hostname= os.environ['HOSTNAME']
-        self._port = os.environ['PORT']
-        self._comment_username = os.environ['GITHUB_USER']
-        self._comment_password = os.environ['GITHUB_PASS']
+        hostname= os.environ['HOSTNAME']
+        port = os.environ['PORT']
+        comment_username = os.environ['REPORT_USERNAME']
+        comment_password = os.environ['REPORT_PASSWORD']
+
+        server = hostname + ':' + port
+        link_parts = (server, 'runs', self._owner, self._branch_ref,
+                      'html', 'index.html')
+        result_uri = os.sep.join(link_parts)
+
+        report_auth = Authorization(comment_username, comment_password)
+        self._reporter = BenchmarkReporter.makeReporter(
+            result_uri, self._pull_request['comments_url'], report_auth)
 
     def run(self):
         self._run_asv()
@@ -58,6 +67,7 @@ class ASVProcess(Process):
         check_call(asv_publish_command)
         os.chdir(self._dir)
         self._report_run_finished()
+        self._reporter.report_run_finished()
 
     def _set_up_environment(self):
 
@@ -91,18 +101,65 @@ class ASVProcess(Process):
                       sort_keys=True)
 
 
-    def _report_run_finished(self):
-        server = self._hostname + ':' + self._port
-        link_parts = (server, 'runs', self._owner, self._branch_ref,
-                      'html', 'index.html')
-        result_link = os.sep.join(link_parts)
-        self._comments_url = self._pull_request['comments_url']
+class Authorization(object):
+    def __init__(self, username, password):
+        self._username = username
+        self._password = password
+
+    def getUsername(self):
+        return self._username
+
+    def getPassword(self):
+        return self._password
+
+
+class SourceRepository(metaclass=ABCMeta):
+    @classmethod
+    def makeRepository(cls, url, branch, directory):
+        return GitRepository(url, branch, directory)
+
+    @abstractmethod
+    def __init__(self):
+        pass
+
+
+class GitRepository(SourceRepository):
+    def __init__(self, url, branch, directory):
+        if os.path.exists(directory):
+            cur_dir = os.getcwd()
+            os.chdir(directory)
+            pull_command = ['git', 'pull']
+            check_call(pull_command)
+            os.chdir(cur_dir)
+        else:
+            clone_command = ['git', 'clone', '-b', branch, url, directory]
+            check_call(clone_command)
+
+
+class BenchmarkReporter(metaclass=ABCMeta):
+    @classmethod
+    def makeReporter(cls, result_uri, report_uri, report_auth):
+        return GitHubReporter(result_uri, report_uri, report_auth)
+
+    @abstractmethod
+    def __init__(self):
+        pass
+
+
+class GitHubReporter(BenchmarkReporter):
+    def __init__(self, result_uri, report_uri, report_auth):
+        self._comments_url = report_uri
+        self._comment_username = report_auth.getUsername()
+        self._comment_password = report_auth.getPassword()
+        self._result_link = result_uri
+
+    def report_run_finished(self):
 
         self._delete_old_comments()
 
         comment_body = ("## Automated report from asv run\nBenchmark run "
                         "completed successfully. Results available at\n[%s]"
-                        "(%s)") % (result_link, result_link)
+                        "(%s)") % (self._result_link, self._result_link)
         params = {'body': comment_body}
         requests.post(self._comments_url, data=json.dumps(params),
                       auth=(self._comment_username, self._comment_password))
@@ -123,24 +180,3 @@ class ASVProcess(Process):
                         auth=(self._comment_username, self._comment_password))
 
 
-class SourceRepository(metaclass=ABCMeta):
-    @classmethod
-    def makeRepository(self, url, branch, directory):
-        return GitRepository(url, branch, directory)
-
-    @abstractmethod
-    def __init__(self):
-        pass
-
-
-class GitRepository(SourceRepository):
-    def __init__(self, url, branch, directory):
-        if os.path.exists(directory):
-            cur_dir = os.getcwd()
-            os.chdir(directory)
-            pull_command = ['git', 'pull']
-            check_call(pull_command)
-            os.chdir(cur_dir)
-        else:
-            clone_command = ['git', 'clone', '-b', branch, url, directory]
-            check_call(clone_command)
