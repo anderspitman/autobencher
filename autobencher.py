@@ -4,7 +4,8 @@ import os
 from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, StaticFileHandler, Application, url
 
-from benchmark_runner import BenchmarkerFactory, Authorization
+from autobencher.util import Authorization
+from autobencher.factory import BenchmarkerFactory
 
 class WebhooksHandler(RequestHandler):
     
