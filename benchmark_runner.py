@@ -33,7 +33,7 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
 
     @classmethod
     def makeReporter(cls, result_uri, report_uri, report_auth):
-        return GitHubReporter(result_uri, report_uri, report_auth)
+        return ASVBenchmarkReporter(result_uri, report_uri, report_auth)
         
 
 class BenchmarkRunner(metaclass=ABCMeta):
@@ -74,10 +74,8 @@ class ASVProcess(Process):
         commit_range = self._base_commit + '~1..' + self._branch_ref
         asv_command = ['asv', 'run', '--steps', '10', commit_range]
         check_call(asv_command)
-        asv_publish_command = ['asv', 'publish']
-        check_call(asv_publish_command)
-        os.chdir(self._dir)
         self._reporter.report()
+        os.chdir(self._dir)
 
     def _set_up_environment(self):
 
@@ -143,10 +141,6 @@ class GitRepository(SourceRepository):
 
 
 class BenchmarkReporter(metaclass=ABCMeta):
-    @classmethod
-    def makeReporter(cls, result_uri, report_uri, report_auth):
-        return GitHubReporter(result_uri, report_uri, report_auth)
-
     @abstractmethod
     def __init__(self):
         pass
@@ -188,5 +182,12 @@ class GitHubReporter(BenchmarkReporter):
     def _delete_comment(self, comment_url):
         requests.delete(comment_url,
                         auth=(self._comment_username, self._comment_password))
+
+
+class ASVBenchmarkReporter(GitHubReporter):
+    def report(self):
+        asv_publish_command = ['asv', 'publish']
+        check_call(asv_publish_command)
+        super(ASVBenchmarkReporter, self).report()
 
 
