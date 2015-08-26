@@ -4,7 +4,7 @@ import os
 from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, StaticFileHandler, Application, url
 
-from benchmark_runner import BenchmarkRunner
+from benchmark_runner import BenchmarkerFactory, Authorization
 
 class WebhooksHandler(RequestHandler):
     
@@ -18,9 +18,36 @@ class WebhooksHandler(RequestHandler):
         if ('pull_request' in event_data and
             event_data['action'] in ('opened', 'synchronize')):
             repo_url = event_data['pull_request']['head']['repo']['clone_url']
-            runner = BenchmarkRunner.makeBenchmarkRunner(os.getcwd(),
-                                                         event_data)
+            factory = BenchmarkerFactory.makeFactory()
+
+            # Reporting
+            hostname= os.environ['HOSTNAME']
+            port = os.environ['PORT']
+            comment_username = os.environ['REPORT_USERNAME']
+            comment_password = os.environ['REPORT_PASSWORD']
+
+            server = hostname + ':' + port
+            link_parts =\
+                (server, 'runs',
+                 event_data['pull_request']['head']['repo']['owner']['login'],
+                 event_data['pull_request']['head']['ref'],
+                 'html', 'index.html')
+            result_uri = os.sep.join(link_parts)
+
+            report_auth = Authorization(comment_username, comment_password)
+            reporter = factory.makeReporter(
+                result_uri,
+                event_data['pull_request']['comments_url'], report_auth)
+            runner = factory.makeRunner(
+                os.getcwd(),
+                event_data['pull_request']['head']['repo']['clone_url'],
+                event_data['pull_request']['base']['sha'],
+                event_data['pull_request']['head']['ref'],
+                event_data['pull_request']['head']['repo']['owner']['login'],
+                reporter)
+
             runner.run()
+        
 
         # log webhooks request
         with open('webhooks_request.json', 'w') as webhooks_request_fp:

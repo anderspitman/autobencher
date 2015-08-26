@@ -7,52 +7,63 @@ from multiprocessing import Process
 from subprocess import check_call
 from abc import ABCMeta, abstractmethod
 
+class BenchmarkerFactory(metaclass=ABCMeta):
+    @classmethod
+    @abstractmethod
+    def makeRunner(cls):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def makeReporter(cls):
+        pass
+
+    @classmethod
+    def makeFactory(cls):
+        return ASVBenchmarkerFactory()
+
+
+class ASVBenchmarkerFactory(BenchmarkerFactory):
+
+    @classmethod
+    def makeRunner(cls, directory, repo_uri, repo_base, branch, branch_owner,
+                   reporter):
+        return ASVBenchmarkRunner(directory, repo_uri, repo_base, branch,
+                                  branch_owner, reporter)
+
+    @classmethod
+    def makeReporter(cls, result_uri, report_uri, report_auth):
+        return GitHubReporter(result_uri, report_uri, report_auth)
+        
 
 class BenchmarkRunner(metaclass=ABCMeta):
     @abstractmethod
     def run(self):
         pass
 
-    @classmethod
-    def makeBenchmarkRunner(cls, directory, event_data):
-        return ASVBenchmarkRunner(directory, event_data)
-        
 
 class ASVBenchmarkRunner(BenchmarkRunner):
-    def __init__(self, directory, event_data):
-        self._asv_proc = ASVProcess(directory, event_data)
+    def __init__(self, directory, repo_uri, repo_base, branch, branch_owner,
+                 reporter):
+        self._asv_proc = ASVProcess(directory, repo_uri, repo_base, branch,
+                                    branch_owner, reporter)
 
     def run(self):
         self._asv_proc.start()
 
 
 class ASVProcess(Process):
-    def __init__(self, directory, event_data):
+    def __init__(self, directory, repo_uri, repo_base, branch,
+                 branch_owner, reporter):
         super(ASVProcess, self).__init__()
-        self._event_data = event_data
         self._dir = directory
-        self._pull_request = event_data['pull_request']
-        self._base_commit = self._pull_request['base']['sha']
-        self._branch_ref = self._pull_request['head']['ref']
-
+        self._base_commit = repo_base
+        self._branch_ref = branch
         run_dir = os.path.join(self._dir, 'runs')
-        self._owner = self._pull_request['head']['repo']['owner']['login']
-        self._branch_dir = os.path.join(run_dir, self._owner, self._branch_ref)
-        self._clone_url = self._pull_request['head']['repo']['clone_url']
-
-        hostname= os.environ['HOSTNAME']
-        port = os.environ['PORT']
-        comment_username = os.environ['REPORT_USERNAME']
-        comment_password = os.environ['REPORT_PASSWORD']
-
-        server = hostname + ':' + port
-        link_parts = (server, 'runs', self._owner, self._branch_ref,
-                      'html', 'index.html')
-        result_uri = os.sep.join(link_parts)
-
-        report_auth = Authorization(comment_username, comment_password)
-        self._reporter = BenchmarkReporter.makeReporter(
-            result_uri, self._pull_request['comments_url'], report_auth)
+        owner = branch_owner
+        self._branch_dir = os.path.join(run_dir, owner, self._branch_ref)
+        self._clone_url = repo_uri
+        self._reporter = reporter
 
     def run(self):
         self._run_asv()
@@ -66,8 +77,7 @@ class ASVProcess(Process):
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
         os.chdir(self._dir)
-        self._report_run_finished()
-        self._reporter.report_run_finished()
+        self._reporter.report()
 
     def _set_up_environment(self):
 
@@ -75,9 +85,8 @@ class ASVProcess(Process):
             os.makedirs(self._branch_dir)
 
         self._source_repo = os.path.join(self._branch_dir, 'source_repo')
-        branch_name = self._pull_request['head']['ref']
         self._repo = SourceRepository.makeRepository(self._clone_url,
-                                                     branch_name,
+                                                     self._branch_ref,
                                                      self._source_repo)
 
         source_config = os.path.join(self._source_repo, 'asv.conf.json')
@@ -95,21 +104,18 @@ class ASVProcess(Process):
         with open('asv.conf.json', 'w') as asv_fp:
             json.dump(asv_config, asv_fp, indent=4, sort_keys=True)
 
-        # log webhooks request
-        with open('webhooks_request.json', 'w') as webhooks_request_fp:
-            json.dump(self._event_data, webhooks_request_fp, indent=4,
-                      sort_keys=True)
-
 
 class Authorization(object):
     def __init__(self, username, password):
         self._username = username
         self._password = password
 
-    def getUsername(self):
+    @property
+    def username(self):
         return self._username
 
-    def getPassword(self):
+    @property
+    def password(self):
         return self._password
 
 
@@ -145,19 +151,23 @@ class BenchmarkReporter(metaclass=ABCMeta):
     def __init__(self):
         pass
 
+    @abstractmethod
+    def report(self):
+        pass
+
 
 class GitHubReporter(BenchmarkReporter):
     def __init__(self, result_uri, report_uri, report_auth):
         self._comments_url = report_uri
-        self._comment_username = report_auth.getUsername()
-        self._comment_password = report_auth.getPassword()
+        self._comment_username = report_auth.username
+        self._comment_password = report_auth.password
         self._result_link = result_uri
 
-    def report_run_finished(self):
+    def report(self):
 
         self._delete_old_comments()
 
-        comment_body = ("## Automated report from asv run\nBenchmark run "
+        comment_body = ("## Automated report\nBenchmark run "
                         "completed successfully. Results available at\n[%s]"
                         "(%s)") % (self._result_link, self._result_link)
         params = {'body': comment_body}
