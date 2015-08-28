@@ -14,6 +14,10 @@ class BenchmarkRunner(metaclass=ABCMeta):
     def run(self):
         pass
 
+    @abstractmethod
+    def get_run_location(self):
+        pass
+
 
 class ASVBenchmarkRunner(BenchmarkRunner):
     def __init__(self, directory, repo_uri, repo_base, branch, branch_owner,
@@ -26,6 +30,9 @@ class ASVBenchmarkRunner(BenchmarkRunner):
 
     def run(self):
         self._asv_proc.start()
+
+    def get_run_location(self):
+        return self._asv_proc.get_branch_directory()
 
 
 class ASVProcess(Process):
@@ -43,6 +50,9 @@ class ASVProcess(Process):
 
     def run(self):
         self._run_asv()
+
+    def get_branch_directory(self):
+        return self._branch_dir
        
     def _run_asv(self):
         self._set_up_environment()
