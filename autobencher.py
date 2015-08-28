@@ -16,11 +16,6 @@ class EventHandler(RequestHandler):
     def post(self):
         event = json.loads(self.request.body.decode('utf-8'))
 
-        # log webhooks request
-        with open('webhooks_request.json', 'w') as webhooks_request_fp:
-            json.dump(event, webhooks_request_fp, indent=4,
-                      sort_keys=True)
-
         parser = self._factory.makeEventParser(event)
         event_data = parser.getEventData()
 
@@ -37,8 +32,17 @@ class EventHandler(RequestHandler):
                                               event_data.repository_base,
                                               event_data.branch,
                                               event_data.branch_owner, reporter)
+            run_location = runner.get_run_location()
+            log_event(event, run_location)
+
             runner.run()
 
+
+def log_event(event, directory):
+    log_path = os.path.join(directory, 'request.json')
+    with open(log_path, 'w') as request_fp:
+        json.dump(event, request_fp, indent=4,
+                  sort_keys=True)
 
 app = Application([
     url(r"/webhooks", EventHandler),
