@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 from .runner import ASVBenchmarkRunner
 from .reporter import ASVBenchmarkReporter
+from .event import ASVEventParser
 
 class BenchmarkerFactory(metaclass=ABCMeta):
     @classmethod
@@ -12,6 +13,11 @@ class BenchmarkerFactory(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def makeReporter(cls):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def makeEventParser(cls):
         pass
 
     @classmethod
@@ -30,6 +36,10 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
     @classmethod
     def makeReporter(cls, result_uri, report_uri, report_auth):
         return ASVBenchmarkReporter(result_uri, report_uri, report_auth)
+
+    @classmethod
+    def makeEventParser(cls, event):
+        return ASVEventParser(event)
         
 
 

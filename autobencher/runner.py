@@ -18,6 +18,9 @@ class BenchmarkRunner(metaclass=ABCMeta):
 class ASVBenchmarkRunner(BenchmarkRunner):
     def __init__(self, directory, repo_uri, repo_base, branch, branch_owner,
                  reporter):
+        # Start a new process. This is necessary since we need to change
+        # the working directory for ASV to work, but we also need to be able
+        # to handle concurrent ASV runs.
         self._asv_proc = ASVProcess(directory, repo_uri, repo_base, branch,
                                     branch_owner, reporter)
 
