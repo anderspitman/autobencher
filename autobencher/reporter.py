@@ -13,6 +13,10 @@ class BenchmarkReporter(metaclass=ABCMeta):
     def report(self):
         pass
 
+    @abstractmethod
+    def report_run_started(self):
+        pass
+
 
 class GitHubReporter(BenchmarkReporter):
     def __init__(self, result_uri, report_uri, report_auth):
@@ -28,6 +32,13 @@ class GitHubReporter(BenchmarkReporter):
         comment_body = ("## Automated report\nBenchmark run "
                         "completed successfully. Results available at\n[%s]"
                         "(%s)") % (self._result_link, self._result_link)
+        params = {'body': comment_body}
+        requests.post(self._comments_url, data=json.dumps(params),
+                      auth=(self._comment_username, self._comment_password))
+
+    def report_run_started(self):
+        self._delete_old_comments()
+        comment_body = "## Automated report\nBenchmark run started"
         params = {'body': comment_body}
         requests.post(self._comments_url, data=json.dumps(params),
                       auth=(self._comment_username, self._comment_password))

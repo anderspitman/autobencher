@@ -45,6 +45,10 @@ class ASVProcess(Process):
         run_dir = os.path.join(self._dir, 'runs')
         owner = branch_owner
         self._branch_dir = os.path.join(run_dir, owner, self._branch_ref)
+
+        if not os.path.exists(self._branch_dir):
+            os.makedirs(self._branch_dir)
+
         self._clone_url = repo_uri
         self._reporter = reporter
 
@@ -55,19 +59,16 @@ class ASVProcess(Process):
         return self._branch_dir
        
     def _run_asv(self):
+        self._reporter.report_run_started()
         self._set_up_environment()
         # include 1 previous commit from master so we can see any regressions
         commit_range = self._base_commit + '~1..' + self._branch_ref
         asv_command = ['asv', 'run', '--steps', '10', commit_range]
-        check_call(asv_command)
+        #check_call(asv_command)
         self._reporter.report()
         os.chdir(self._dir)
 
     def _set_up_environment(self):
-
-        if not os.path.exists(self._branch_dir):
-            os.makedirs(self._branch_dir)
-
         self._source_repo = os.path.join(self._branch_dir, 'source_repo')
         self._repo = SourceRepository.makeRepository(self._clone_url,
                                                      self._branch_ref,
