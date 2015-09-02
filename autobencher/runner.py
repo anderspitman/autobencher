@@ -65,7 +65,7 @@ class ASVProcess(Process):
         commit_range = self._base_commit + '~1..' + self._branch_ref
         asv_command = ['asv', 'run', '--steps', '10', commit_range]
         check_call(asv_command)
-        self._reporter.report()
+        self._reporter.report_run_finished()
         os.chdir(self._dir)
 
     def _set_up_environment(self):

@@ -10,7 +10,7 @@ class BenchmarkReporter(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def report(self):
+    def report_run_finished(self):
         pass
 
     @abstractmethod
@@ -25,13 +25,13 @@ class GitHubReporter(BenchmarkReporter):
         self._comment_password = report_auth.password
         self._result_link = result_uri
 
-    def report(self):
+    def report_run_finished(self):
 
         self._delete_old_comments()
 
         comment_body = ("## Automated report\nBenchmark run "
-                        "completed successfully. Results available at\n[%s]"
-                        "(%s)") % (self._result_link, self._result_link)
+                        "completed successfully. Results available [here]"
+                        "(%s)") % self._result_link
         params = {'body': comment_body}
         requests.post(self._comments_url, data=json.dumps(params),
                       auth=(self._comment_username, self._comment_password))
@@ -60,9 +60,9 @@ class GitHubReporter(BenchmarkReporter):
 
 
 class ASVBenchmarkReporter(GitHubReporter):
-    def report(self):
+    def report_run_finished(self):
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
-        super(ASVBenchmarkReporter, self).report()
+        super(ASVBenchmarkReporter, self).report_run_finished()
 
 

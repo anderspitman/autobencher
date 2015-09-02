@@ -31,12 +31,12 @@ def test_report_run_finished(mock_requests, mock_check_call):
     password = 'dummy_pass'
     expected_post = ('{"body": "## Automated report\\nBenchmark run completed '
                      'successfully. Results available '
-                     'at\\n[%s](%s)"}') % (result_uri, result_uri)
+                     '[here](%s)"}') % result_uri
 
 
     auth = Authorization(username, password)
     reporter = ASVBenchmarkReporter(result_uri, report_uri, auth)
-    reporter.report()
+    reporter.report_run_finished()
 
     mock_requests.post.assert_called_with(report_uri, data=expected_post,
                                           auth=(username, password))
