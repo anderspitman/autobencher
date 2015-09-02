@@ -19,7 +19,6 @@ def test_report_run_started(mock_requests):
     reporter = ASVBenchmarkReporter(result_uri, report_uri, auth)
     reporter.report_run_started()
 
-    mock_requests.get.assert_called_with(report_uri)
     mock_requests.post.assert_called_with(report_uri, data=expected_post,
                                           auth=(username, password))
 
@@ -39,6 +38,5 @@ def test_report_run_finished(mock_requests, mock_check_call):
     reporter = ASVBenchmarkReporter(result_uri, report_uri, auth)
     reporter.report()
 
-    mock_requests.get.assert_called_with(report_uri)
     mock_requests.post.assert_called_with(report_uri, data=expected_post,
                                           auth=(username, password))
