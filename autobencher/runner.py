@@ -48,6 +48,10 @@ class ASVProcess(Process):
         self._clone_url = repo_uri
         self._reporter = reporter
 
+        if not os.path.exists(self._branch_dir):
+            os.makedirs(self._branch_dir)
+
+
     def run(self):
         self._run_asv()
 
@@ -64,9 +68,6 @@ class ASVProcess(Process):
         os.chdir(self._dir)
 
     def _set_up_environment(self):
-
-        if not os.path.exists(self._branch_dir):
-            os.makedirs(self._branch_dir)
 
         self._source_repo = os.path.join(self._branch_dir, 'source_repo')
         self._repo = SourceRepository.makeRepository(self._clone_url,
