@@ -4,6 +4,10 @@ from abc import ABCMeta, abstractmethod
 
 
 class EventData(object):
+    def __init__(self):
+        self.reporter_data = ReporterData()
+        self.runner_data = RunnerData()
+
     @property
     def valid(self):
         return self._valid
@@ -54,6 +58,14 @@ class EventData(object):
         self._branch_owner = value
 
 
+class RunnerData(object):
+    pass
+
+
+class ReporterData(object):
+    pass
+
+
 class EventParser(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, event):
@@ -88,6 +100,8 @@ class ASVEventParser(GitHubWebhooksParser):
             self._event_data.result_uri = os.sep.join(link_parts)
             self._event_data.report_uri = event['pull_request']['comments_url']
             self._event_data.repository_uri = \
+                event['pull_request']['head']['repo']['clone_url']
+            self._event_data.runner_data.repository_uri = \
                 event['pull_request']['head']['repo']['clone_url']
             self._event_data.repository_base = \
                 event['pull_request']['base']['sha']

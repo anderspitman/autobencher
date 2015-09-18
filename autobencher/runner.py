@@ -63,7 +63,7 @@ class ASVProcess(Process):
         # include 1 previous commit from master so we can see any regressions
         commit_range = self._base_commit + '~1..' + self._branch_ref
         asv_command = ['asv', 'run', '--steps', '10', commit_range]
-        check_call(asv_command)
+        #check_call(asv_command)
         self._reporter.report()
         os.chdir(self._dir)
 
