@@ -19,7 +19,7 @@ def process_post(factory, request):
         comment_password = os.environ['REPORT_PASSWORD']
 
         report_auth = Authorization(comment_username, comment_password)
-        reporter = factory.makeReporter(event_data.result_uri,
+        reporter = factory.makeReporter(event_data.reporter_data,
                                         event_data.report_uri,
                                         report_auth)
         runner = factory.makeRunner(os.getcwd(),

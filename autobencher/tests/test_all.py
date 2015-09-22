@@ -9,6 +9,9 @@ from unittest.mock import patch
 from autobencher.event import RunnerData, ReporterData, EventData
 from autobencher.server import process_post
 from autobencher.factory import BenchmarkerFactory
+from autobencher.util import Authorization
+
+from autobencher.reporter import GitHubReporter, ASVBenchmarkReporter
 
 
 class TestRunnerData:
@@ -114,3 +117,83 @@ class TestAutobencherPost:
 
         MockASVBenchmarkReporter.assert_called_with(
             result_uri, report_uri, mock_report_auth)
+
+
+class TestMakeReporter:
+    def setup_method(self, test_method):
+        self.result_uri = 'result_uri' 
+        self.report_uri = 'fake_comment_url'
+        self.report_user = 'fake_user'
+        self.report_pass = 'fake_pass'
+        self.report_auth = Authorization(self.report_user, self.report_pass)
+
+        self.event_data = EventData()
+        self.event_data.reporter_data.result_uri = self.result_uri
+
+        self.factory = BenchmarkerFactory.makeFactory()
+
+    def test_makes_reporter(self):
+        observed = self.factory.makeReporter(self.event_data.reporter_data,
+                                             self.report_uri, self.report_auth)
+        assert isinstance(observed, ASVBenchmarkReporter)
+
+    def test_equal_to_manually_created(self):
+        expected = ASVBenchmarkReporter(self.result_uri, self.report_uri,
+                                        self.report_auth)
+        observed = self.factory.makeReporter(self.event_data.reporter_data,
+                                             self.report_uri, self.report_auth)
+        assert expected == observed
+
+
+class TestGitHubReporter:
+    def setup_method(self, test_method):
+        self.result_uri = 'result_uri' 
+        self.report_uri = 'fake_comment_url'
+        self.report_user = 'fake_user'
+        self.report_pass = 'fake_pass'
+        self.report_auth = Authorization(self.report_user, self.report_pass)
+
+        self.event_data = EventData()
+        self.event_data.reporter_data.result_uri = self.result_uri
+
+        self.factory = BenchmarkerFactory.makeFactory()
+
+    def test_eq_simple(self):
+        rep1 = GitHubReporter(self.event_data.reporter_data, self.report_uri,
+                              self.report_auth)
+        rep2 = GitHubReporter(self.event_data.reporter_data, self.report_uri,
+                              self.report_auth)
+        assert rep1 == rep2
+
+    def test_eq_different_result_uri(self):
+        rep1 = GitHubReporter(self.result_uri, self.report_uri,
+                              self.report_auth)
+        self.event_data.reporter_data.result_uri = 'different'
+        rep2 = GitHubReporter(self.event_data.reporter_data, self.report_uri,
+                              self.report_auth)
+        assert rep1 != rep2
+
+    def test_eq_different_report_uri(self):
+        rep1 = GitHubReporter(self.result_uri, self.report_uri,
+                              self.report_auth)
+        self.report_uri = 'different'
+        rep2 = GitHubReporter(self.result_uri, self.report_uri,
+                              self.report_auth)
+        assert rep1 != rep2
+
+    def test_eq_different_auth_user(self):
+        rep1 = GitHubReporter(self.result_uri, self.report_uri,
+                              self.report_auth)
+        auth = Authorization('different', self.report_auth.password)
+        rep2 = GitHubReporter(self.event_data.reporter_data, self.report_uri,
+                              auth)
+        assert rep1 != rep2
+
+    def test_eq_different_auth_pass(self):
+        rep1 = GitHubReporter(self.result_uri, self.report_uri,
+                              self.report_auth)
+        auth = Authorization(self.report_auth.username, 'different')
+        rep2 = GitHubReporter(self.result_uri, self.report_uri, auth)
+        assert rep1 != rep2
+
+
