@@ -28,14 +28,14 @@ class BenchmarkerFactory(metaclass=ABCMeta):
 class ASVBenchmarkerFactory(BenchmarkerFactory):
 
     @classmethod
-    def makeRunner(cls, directory, repo_uri, repo_base, branch, branch_owner,
-                   reporter):
-        return ASVBenchmarkRunner(directory, repo_uri, repo_base, branch,
-                                  branch_owner, reporter)
+    def makeRunner(cls, directory, data, reporter):
+        return ASVBenchmarkRunner(directory, data.repository_uri,
+                                  data.repository_base, data.branch,
+                                  data.branch_owner, reporter)
 
     @classmethod
-    def makeReporter(cls, data, report_uri, report_auth):
-        return ASVBenchmarkReporter(data.result_uri, report_uri, report_auth)
+    def makeReporter(cls, data, report_auth):
+        return ASVBenchmarkReporter(data.result_uri, data.report_uri, report_auth)
 
     @classmethod
     def makeEventParser(cls, event):

@@ -100,19 +100,20 @@ class TestMakeReporter:
 
         self.event_data = EventData()
         self.event_data.reporter_data.result_uri = self.result_uri
+        self.event_data.reporter_data.report_uri = self.report_uri
 
         self.factory = BenchmarkerFactory.makeFactory()
 
     def test_makes_reporter(self):
         observed = self.factory.makeReporter(self.event_data.reporter_data,
-                                             self.report_uri, self.report_auth)
+                                             self.report_auth)
         assert isinstance(observed, ASVBenchmarkReporter)
 
     def test_equal_to_manually_created(self):
         expected = ASVBenchmarkReporter(self.result_uri, self.report_uri,
                                         self.report_auth)
         observed = self.factory.makeReporter(self.event_data.reporter_data,
-                                             self.report_uri, self.report_auth)
+                                             self.report_auth)
         assert expected == observed
 
 
