@@ -34,8 +34,8 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
                                   branch_owner, reporter)
 
     @classmethod
-    def makeReporter(cls, result_uri, report_uri, report_auth):
-        return ASVBenchmarkReporter(result_uri, report_uri, report_auth)
+    def makeReporter(cls, data, report_uri, report_auth):
+        return ASVBenchmarkReporter(data.result_uri, report_uri, report_auth)
 
     @classmethod
     def makeEventParser(cls, event):

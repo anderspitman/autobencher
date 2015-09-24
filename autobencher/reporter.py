@@ -21,6 +21,12 @@ class GitHubReporter(BenchmarkReporter):
         self._comment_password = report_auth.password
         self._result_link = result_uri
 
+    def __eq__(self, other):
+        return (self._result_link == other._result_link and
+                self._comments_url == other._comments_url and
+                self._comment_username == other._comment_username and
+                self._comment_password == other._comment_password)
+
     def report(self):
 
         self._delete_old_comments()

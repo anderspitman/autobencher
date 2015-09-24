@@ -11,4 +11,8 @@ class Authorization(object):
     def password(self):
         return self._password
 
+    def __eq__(self, other):
+        return (self._username == other._username and
+                self._password == other._password)
+
 
