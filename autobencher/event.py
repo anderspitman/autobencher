@@ -63,7 +63,36 @@ class RunnerData(object):
 
 
 class ReporterData(object):
-    pass
+    @property
+    def result_uri(self):
+        return self._result_uri
+    @result_uri.setter
+    def result_uri(self, value):
+        self._result_uri = value
+
+    @property
+    def report_uri(self):
+        return self._report_uri
+    @report_uri.setter
+    def report_uri(self, value):
+        self._report_uri = value
+
+    @property
+    def report_auth(self):
+        return self._report_auth
+    @report_auth.setter
+    def report_auth(self, report_auth):
+        self._report_auth = report_auth
+
+    def __init__(self, result_uri=None, report_uri=None, report_auth=None):
+        self._result_uri = result_uri
+        self._report_uri = report_uri
+        self._report_auth = report_auth
+
+    def __eq__(self, other):
+        return (self._result_uri == other._result_uri and
+                self._report_uri == other._report_uri and
+                self._report_auth == other._report_auth)
 
 
 class EventParser(metaclass=ABCMeta):
@@ -72,7 +101,7 @@ class EventParser(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def getEventData(self):
+    def get_event_data(self):
         pass
 
 
@@ -111,5 +140,5 @@ class ASVEventParser(GitHubWebhooksParser):
             self._event_data.branch_owner = \
                 event['pull_request']['head']['repo']['owner']['login']
 
-    def getEventData(self):
+    def get_event_data(self):
         return self._event_data

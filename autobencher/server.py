@@ -12,7 +12,7 @@ def process_post(factory, request):
     event = json.loads(request.body.decode('utf-8'))
 
     parser = factory.makeEventParser(event)
-    event_data = parser.getEventData()
+    event_data = parser.get_event_data()
 
     if event_data.valid:
         comment_username = os.environ['REPORT_USERNAME']
