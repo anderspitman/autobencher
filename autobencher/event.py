@@ -168,15 +168,22 @@ class ASVEventParser(GitHubWebhooksParser):
             self._event_data.result_uri = os.sep.join(link_parts)
             self._event_data.reporter_data.result_uri = os.sep.join(link_parts)
             self._event_data.report_uri = event['pull_request']['comments_url']
+            self._event_data.reporter_data.report_uri = event['pull_request']['comments_url']
             self._event_data.repository_uri = \
                 event['pull_request']['head']['repo']['clone_url']
             self._event_data.runner_data.repository_uri = \
                 event['pull_request']['head']['repo']['clone_url']
             self._event_data.repository_base = \
                 event['pull_request']['base']['sha']
+            self._event_data.runner_data.repository_base = \
+                event['pull_request']['base']['sha']
             self._event_data.branch = \
                 event['pull_request']['head']['ref']
+            self._event_data.runner_data.branch = \
+                event['pull_request']['head']['ref']
             self._event_data.branch_owner = \
+                event['pull_request']['head']['repo']['owner']['login']
+            self._event_data.runner_data.branch_owner = \
                 event['pull_request']['head']['repo']['owner']['login']
 
     def get_event_data(self):

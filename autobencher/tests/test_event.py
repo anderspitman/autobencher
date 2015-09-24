@@ -186,10 +186,10 @@ class TestASVEventParser:
         event_data = parser.get_event_data()
         exp_result_uri = ('192.168.0.1:8000/runs/dummy_login/'
                           'branch/html/index.html')
-        exp_reporter_data = ReporterData(result_uri=exp_result_uri)
-        exp_runner_data = RunnerData()
+        exp_reporter_data = ReporterData(exp_result_uri, report_uri)
+        exp_runner_data = RunnerData(repository_uri, repository_base, branch,
+                                     branch_owner=login)
 
         assert event_data.valid
-        assert event_data.result_uri == exp_result_uri
         assert event_data.reporter_data == exp_reporter_data
-        #assert event_data.runner_data == exp_runner_data
+        assert event_data.runner_data == exp_runner_data
