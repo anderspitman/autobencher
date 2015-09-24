@@ -59,7 +59,46 @@ class EventData(object):
 
 
 class RunnerData(object):
-    pass
+    @property
+    def repository_uri(self):
+        return self._repository_uri
+    @repository_uri.setter
+    def repository_uri(self, value):
+        self._repository_uri = value
+
+    @property
+    def repository_base(self):
+        return self._repository_base
+    @repository_base.setter
+    def repository_base(self, value):
+        self._repository_base = value
+
+    @property
+    def branch(self):
+        return self._branch
+    @branch.setter
+    def branch(self, value):
+        self._branch = value
+
+    @property
+    def branch_owner(self):
+        return self._branch_owner
+    @branch_owner.setter
+    def branch_owner(self, value):
+        self._branch_owner = value
+
+    def __init__(self, repository_uri=None, repository_base=None, branch=None,
+                 branch_owner=None):
+        self._repository_uri = repository_uri
+        self._repository_base = repository_base
+        self._branch = branch
+        self._branch_owner = branch_owner
+
+    def __eq__(self, other):
+        return (self._repository_uri == other._repository_uri and
+                self._repository_base == other._repository_base and
+                self._branch == other._branch and
+                self._branch_owner == other._branch_owner)
 
 
 class ReporterData(object):
