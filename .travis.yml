@@ -16,5 +16,6 @@ install:
   - source activate env_name
   - conda install --yes --file conda_requirements.txt
 script:
+  - flake8 autobencher.py autobencher
   - cd autobencher
   - py.test

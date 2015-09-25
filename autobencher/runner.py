@@ -51,13 +51,12 @@ class ASVProcess(Process):
         if not os.path.exists(self._branch_dir):
             os.makedirs(self._branch_dir)
 
-
     def run(self):
         self._run_asv()
 
     def get_branch_directory(self):
         return self._branch_dir
-       
+
     def _run_asv(self):
         self._set_up_environment()
         # include 1 previous commit from master so we can see any regressions
@@ -88,5 +87,3 @@ class ASVProcess(Process):
         os.chdir(self._branch_dir)
         with open('asv.conf.json', 'w') as asv_fp:
             json.dump(asv_config, asv_fp, indent=4, sort_keys=True)
-
-

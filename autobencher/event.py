@@ -11,6 +11,7 @@ class EventData(object):
     @property
     def valid(self):
         return self._valid
+
     @valid.setter
     def valid(self, value):
         self._valid = value
@@ -18,6 +19,7 @@ class EventData(object):
     @property
     def result_uri(self):
         return self._result_uri
+
     @result_uri.setter
     def result_uri(self, value):
         self._result_uri = value
@@ -25,13 +27,15 @@ class EventData(object):
     @property
     def report_uri(self):
         return self._report_uri
+
     @report_uri.setter
     def report_uri(self, value):
         self._report_uri = value
-        
+
     @property
     def repository_uri(self):
         return self._repository_uri
+
     @repository_uri.setter
     def repository_uri(self, value):
         self._repository_uri = value
@@ -39,6 +43,7 @@ class EventData(object):
     @property
     def repository_base(self):
         return self._repository_base
+
     @repository_base.setter
     def repository_base(self, value):
         self._repository_base = value
@@ -46,6 +51,7 @@ class EventData(object):
     @property
     def branch(self):
         return self._branch
+
     @branch.setter
     def branch(self, value):
         self._branch = value
@@ -53,6 +59,7 @@ class EventData(object):
     @property
     def branch_owner(self):
         return self._branch_owner
+
     @branch_owner.setter
     def branch_owner(self, value):
         self._branch_owner = value
@@ -62,6 +69,7 @@ class RunnerData(object):
     @property
     def repository_uri(self):
         return self._repository_uri
+
     @repository_uri.setter
     def repository_uri(self, value):
         self._repository_uri = value
@@ -69,6 +77,7 @@ class RunnerData(object):
     @property
     def repository_base(self):
         return self._repository_base
+
     @repository_base.setter
     def repository_base(self, value):
         self._repository_base = value
@@ -76,6 +85,7 @@ class RunnerData(object):
     @property
     def branch(self):
         return self._branch
+
     @branch.setter
     def branch(self, value):
         self._branch = value
@@ -83,6 +93,7 @@ class RunnerData(object):
     @property
     def branch_owner(self):
         return self._branch_owner
+
     @branch_owner.setter
     def branch_owner(self, value):
         self._branch_owner = value
@@ -105,6 +116,7 @@ class ReporterData(object):
     @property
     def result_uri(self):
         return self._result_uri
+
     @result_uri.setter
     def result_uri(self, value):
         self._result_uri = value
@@ -112,6 +124,7 @@ class ReporterData(object):
     @property
     def report_uri(self):
         return self._report_uri
+
     @report_uri.setter
     def report_uri(self, value):
         self._report_uri = value
@@ -119,6 +132,7 @@ class ReporterData(object):
     @property
     def report_auth(self):
         return self._report_auth
+
     @report_auth.setter
     def report_auth(self, report_auth):
         self._report_auth = report_auth
@@ -166,7 +180,8 @@ class ASVEventParser(GitHubWebhooksParser):
                  event['pull_request']['head']['ref'],
                  'html', 'index.html')
             self._event_data.reporter_data.result_uri = os.sep.join(link_parts)
-            self._event_data.reporter_data.report_uri = event['pull_request']['comments_url']
+            self._event_data.reporter_data.report_uri = \
+                event['pull_request']['comments_url']
             self._event_data.runner_data.repository_uri = \
                 event['pull_request']['head']['repo']['clone_url']
             self._event_data.runner_data.repository_base = \
