@@ -1,15 +1,16 @@
-import sys, os
-myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../../')
-
+import os
 import json
-from unittest.mock import patch
+import testing_import_hack
 
+from unittest.mock import patch
 from autobencher.event import EventData
 from autobencher.server import process_post
 from autobencher.factory import BenchmarkerFactory
 from autobencher.util import Authorization
 from autobencher.reporter import GitHubReporter, ASVBenchmarkReporter
+
+
+testing_import_hack.use_package_so_flake8_is_happy()
 
 
 class TestAuth:
@@ -58,7 +59,7 @@ class TestAutobencherPost:
                             'login': login
                         }
                     },
-                    'ref': branch 
+                    'ref': branch
                 },
                 'comments_url': report_uri,
                 'base': {
@@ -92,7 +93,7 @@ class TestAutobencherPost:
 
 class TestMakeReporter:
     def setup_method(self, test_method):
-        self.result_uri = 'result_uri' 
+        self.result_uri = 'result_uri'
         self.report_uri = 'fake_comment_url'
         self.report_user = 'fake_user'
         self.report_pass = 'fake_pass'
@@ -119,7 +120,7 @@ class TestMakeReporter:
 
 class TestGitHubReporter:
     def setup_method(self, test_method):
-        self.result_uri = 'result_uri' 
+        self.result_uri = 'result_uri'
         self.report_uri = 'fake_comment_url'
         self.report_user = 'fake_user'
         self.report_pass = 'fake_pass'
@@ -167,5 +168,3 @@ class TestGitHubReporter:
         auth = Authorization(self.report_auth.username, 'different')
         rep2 = GitHubReporter(self.result_uri, self.report_uri, auth)
         assert rep1 != rep2
-
-

@@ -1,9 +1,11 @@
-import sys, os
-myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../../')
+import testing_import_hack
 
-from autobencher.event import RunnerData, ReporterData, EventData, ASVEventParser
+from autobencher.event import (RunnerData, ReporterData, EventData,
+                               ASVEventParser)
 from autobencher.util import Authorization
+
+
+testing_import_hack.use_package_so_flake8_is_happy()
 
 
 class TestReporterData:
@@ -34,7 +36,8 @@ class TestReporterData:
         assert self.reporter_data.report_auth == self.report_auth
 
     def test_formal_parameters(self):
-        observed = ReporterData(self.result_uri, self.report_uri, self.report_auth)
+        observed = ReporterData(self.result_uri, self.report_uri,
+                                self.report_auth)
         assert observed.result_uri == self.result_uri
         assert observed.report_uri == self.report_uri
         assert observed.report_auth == self.report_auth
@@ -137,7 +140,6 @@ class TestRunnerData:
         assert obs1 != obs2
 
 
-
 class TestEventData:
     def setup_method(self, test_method):
         self.event_data = EventData()
@@ -173,7 +175,7 @@ class TestASVEventParser:
                             'login': login
                         }
                     },
-                    'ref': branch 
+                    'ref': branch
                 },
                 'comments_url': report_uri,
                 'base': {

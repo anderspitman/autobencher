@@ -32,10 +32,11 @@ class EventHandler(RequestHandler):
 
     def initialize(self):
         self._factory = BenchmarkerFactory.makeFactory()
-    
+
     def post(self):
         process_post(self._factory, self.request)
-        
+
+
 def log_event(event, directory):
     log_path = os.path.join(directory, 'request.json')
     with open(log_path, 'w') as request_fp:
@@ -44,7 +45,7 @@ def log_event(event, directory):
 
 app = Application([
     url(r"/webhooks", EventHandler),
-    url(r"/runs/(.*)", StaticFileHandler, { 'path': 'runs' }),
+    url(r"/runs/(.*)", StaticFileHandler, {'path': 'runs'}),
     ])
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import requests
 from subprocess import check_call
 from abc import ABCMeta, abstractmethod
 
+
 class BenchmarkReporter(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self):
@@ -59,5 +60,3 @@ class ASVBenchmarkReporter(GitHubReporter):
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
         super(ASVBenchmarkReporter, self).report()
-
-
