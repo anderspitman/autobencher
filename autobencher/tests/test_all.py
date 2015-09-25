@@ -1,8 +1,6 @@
-import sys
 import os
-myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../../')
 import json
+import testing_import_hack
 
 from unittest.mock import patch
 from autobencher.event import EventData
@@ -10,6 +8,9 @@ from autobencher.server import process_post
 from autobencher.factory import BenchmarkerFactory
 from autobencher.util import Authorization
 from autobencher.reporter import GitHubReporter, ASVBenchmarkReporter
+
+
+testing_import_hack.use_package_so_flake8_is_happy()
 
 
 class TestAuth:

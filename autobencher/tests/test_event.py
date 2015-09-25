@@ -1,11 +1,11 @@
-import sys
-import os
-myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../../')
+import testing_import_hack
 
 from autobencher.event import (RunnerData, ReporterData, EventData,
                                ASVEventParser)
 from autobencher.util import Authorization
+
+
+testing_import_hack.use_package_so_flake8_is_happy()
 
 
 class TestReporterData:
