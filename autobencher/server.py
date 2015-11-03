@@ -47,7 +47,3 @@ app = Application([
     url(r"/webhooks", EventHandler),
     url(r"/runs/(.*)", StaticFileHandler, {'path': 'runs'}),
     ])
-
-if __name__ == "__main__":
-    app.listen(int(os.environ['PORT']))
-    IOLoop.current().start()

@@ -8,11 +8,11 @@ from abc import ABCMeta, abstractmethod
 class BenchmarkReporter(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self):
-        pass
+        """Abstract constructor"""
 
     @abstractmethod
     def report(self):
-        pass
+        """Abstract method for reporting"""
 
 
 class GitHubReporter(BenchmarkReporter):

@@ -9,17 +9,17 @@ class BenchmarkerFactory(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def makeRunner(cls):
-        pass
+        """Abstract method for creating runners"""
 
     @classmethod
     @abstractmethod
     def makeReporter(cls):
-        pass
+        """Abstract method for creating reporters"""
 
     @classmethod
     @abstractmethod
     def makeEventParser(cls):
-        pass
+        """Abstract method for creating event parsers"""
 
     @classmethod
     def makeFactory(cls):

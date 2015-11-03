@@ -12,11 +12,12 @@ from .repository import SourceRepository
 class BenchmarkRunner(metaclass=ABCMeta):
     @abstractmethod
     def run(self):
-        pass
+        """Abstract method for running"""
 
     @abstractmethod
     def get_run_location(self):
-        pass
+        """Abstract method for getting the location where the runner is
+           working"""
 
 
 class ASVBenchmarkRunner(BenchmarkRunner):

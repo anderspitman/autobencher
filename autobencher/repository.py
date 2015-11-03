@@ -11,7 +11,7 @@ class SourceRepository(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self):
-        pass
+        """Abstract constructor"""
 
 
 class GitRepository(SourceRepository):

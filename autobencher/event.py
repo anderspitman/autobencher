@@ -16,55 +16,6 @@ class EventData(object):
     def valid(self, value):
         self._valid = value
 
-    @property
-    def result_uri(self):
-        return self._result_uri
-
-    @result_uri.setter
-    def result_uri(self, value):
-        self._result_uri = value
-
-    @property
-    def report_uri(self):
-        return self._report_uri
-
-    @report_uri.setter
-    def report_uri(self, value):
-        self._report_uri = value
-
-    @property
-    def repository_uri(self):
-        return self._repository_uri
-
-    @repository_uri.setter
-    def repository_uri(self, value):
-        self._repository_uri = value
-
-    @property
-    def repository_base(self):
-        return self._repository_base
-
-    @repository_base.setter
-    def repository_base(self, value):
-        self._repository_base = value
-
-    @property
-    def branch(self):
-        return self._branch
-
-    @branch.setter
-    def branch(self, value):
-        self._branch = value
-
-    @property
-    def branch_owner(self):
-        return self._branch_owner
-
-    @branch_owner.setter
-    def branch_owner(self, value):
-        self._branch_owner = value
-
-
 class RunnerData(object):
     @property
     def repository_uri(self):
@@ -151,16 +102,16 @@ class ReporterData(object):
 class EventParser(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, event):
-        pass
+        """Abstract constructor"""
 
     @abstractmethod
     def get_event_data(self):
-        pass
+        """Abstract method for retrieving event data"""
 
 
 class GitHubWebhooksParser(EventParser):
     def __init__(self, event):
-        pass
+        """Abstract constructor"""
 
 
 class ASVEventParser(GitHubWebhooksParser):
