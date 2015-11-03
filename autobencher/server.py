@@ -1,7 +1,6 @@
 import json
 import os
 
-from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, StaticFileHandler, Application, url
 
 from autobencher.util import Authorization

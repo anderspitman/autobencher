@@ -16,6 +16,7 @@ class EventData(object):
     def valid(self, value):
         self._valid = value
 
+
 class RunnerData(object):
     @property
     def repository_uri(self):
