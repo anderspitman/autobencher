@@ -93,28 +93,39 @@ class TestAutobencherPost:
 
 class TestMakeReporter:
     def setup_method(self, test_method):
-        self.result_uri = 'result_uri'
         self.report_uri = 'fake_comment_url'
         self.report_user = 'fake_user'
         self.report_pass = 'fake_pass'
         self.report_auth = Authorization(self.report_user, self.report_pass)
+        self.branch = 'fake-branch'
+        self.branch_owner = 'fake-branch-owner'
+        self.hostname = 'fake-hostname'
+        self.port = 5000
+        self.result_address = self.hostname + ':' + str(self.port)
+        link_parts = (self.result_address, 'runs', self.branch_owner,
+                      self.branch, 'html', 'index.html')
+        self.result_uri = os.sep.join(link_parts)
 
         self.event_data = EventData()
         self.event_data.reporter_data.result_uri = self.result_uri
+        self.event_data.reporter_data.branch = self.branch
+        self.event_data.reporter_data.branch_owner = self.branch_owner
         self.event_data.reporter_data.report_uri = self.report_uri
 
         self.factory = BenchmarkerFactory.makeFactory()
 
     def test_makes_reporter(self):
         observed = self.factory.makeReporter(self.event_data.reporter_data,
-                                             self.report_auth)
+                                             self.report_auth,
+                                             self.result_address)
         assert isinstance(observed, ASVBenchmarkReporter)
 
     def test_equal_to_manually_created(self):
         expected = ASVBenchmarkReporter(self.result_uri, self.report_uri,
                                         self.report_auth)
         observed = self.factory.makeReporter(self.event_data.reporter_data,
-                                             self.report_auth)
+                                             self.report_auth,
+                                             self.result_address)
         assert expected == observed
 
 

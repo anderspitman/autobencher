@@ -1,3 +1,4 @@
+import os
 from abc import ABCMeta, abstractmethod
 
 from .runner import ASVBenchmarkRunner
@@ -35,8 +36,14 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
                                   data.branch_owner, reporter)
 
     @classmethod
-    def makeReporter(cls, data, report_auth):
-        return ASVBenchmarkReporter(data.result_uri, data.report_uri,
+    def makeReporter(cls, data, report_auth, result_address):
+        link_parts =\
+            (result_address, 'runs',
+             data.branch_owner,
+             data.branch,
+             'html', 'index.html')
+        result_uri = os.sep.join(link_parts)
+        return ASVBenchmarkReporter(result_uri, data.report_uri,
                                     report_auth)
 
     @classmethod
