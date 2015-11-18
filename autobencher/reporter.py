@@ -1,3 +1,4 @@
+import os
 import json
 import requests
 
@@ -16,11 +17,22 @@ class BenchmarkReporter(metaclass=ABCMeta):
 
 
 class GitHubReporter(BenchmarkReporter):
-    def __init__(self, result_uri, report_uri, report_auth):
+    def __init__(self, result_uri, report_uri, branch, branch_owner,
+                 report_auth):
         self._comments_url = report_uri
         self._comment_username = report_auth.username
         self._comment_password = report_auth.password
-        self._result_link = result_uri
+
+        link_parts =\
+            (result_uri, 'runs',
+             branch_owner,
+             branch,
+             'html', 'index.html')
+        uri = os.sep.join(link_parts)
+        self._result_link = uri
+
+        self._branch = branch
+        self._branch_owner = branch_owner
 
     def __eq__(self, other):
         return (self._result_link == other._result_link and
@@ -57,6 +69,22 @@ class GitHubReporter(BenchmarkReporter):
 
 class ASVBenchmarkReporter(GitHubReporter):
     def report(self):
+        self._publish()
+        super(ASVBenchmarkReporter, self).report()
+
+    def _publish(self):
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
-        super(ASVBenchmarkReporter, self).report()
+
+
+class ASVRemoteBenchmarkReporter(ASVBenchmarkReporter):
+    def _publish(self):
+
+        super(ASVRemoteBenchmarkReporter, self)._publish()
+
+        url_parts = ('s3://scikit-bio.org', 'benchmarks', 'pull_requests',
+                     self._branch_owner, self._branch)
+        url = os.sep.join(url_parts)
+        upload_to_s3_command = ['aws', 's3', 'sync', 'html', url,
+                                '--delete']
+        check_call(upload_to_s3_command)

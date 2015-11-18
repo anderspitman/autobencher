@@ -1,8 +1,7 @@
-import os
 from abc import ABCMeta, abstractmethod
 
 from .runner import ASVBenchmarkRunner
-from .reporter import ASVBenchmarkReporter
+from .reporter import ASVRemoteBenchmarkReporter
 from .event import ASVEventParser
 
 
@@ -37,14 +36,9 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
 
     @classmethod
     def makeReporter(cls, data, report_auth, result_address):
-        link_parts =\
-            (result_address, 'runs',
-             data.branch_owner,
-             data.branch,
-             'html', 'index.html')
-        result_uri = os.sep.join(link_parts)
-        return ASVBenchmarkReporter(result_uri, data.report_uri,
-                                    report_auth)
+        return ASVRemoteBenchmarkReporter(result_address, data.report_uri,
+                                          data.branch, data.branch_owner,
+                                          report_auth)
 
     @classmethod
     def makeEventParser(cls, event):
