@@ -219,3 +219,18 @@ class TestGitHubReporter:
         rep2 = GitHubReporter(self.result_uri, self.report_uri,
                               '', '', auth)
         assert rep1 != rep2
+
+    @patch('autobencher.reporter.requests', autospec=True)
+    def test_comment_report(self, mock_requests):
+        rep = GitHubReporter(self.result_uri, self.report_uri,
+                             '', '', self.report_auth)
+        expected_markdown_comment = ('{"body": "## Automated report\\n'
+                                     'Benchmark run completed successfully. '
+                                     'Results available [here](https://'
+                                     's3-us-west-2.amazonaws.com/'
+                                     'scikit-bio.org/benchmarks/pull_requests'
+                                     '///index.html)"}')
+        rep.report()
+        mock_requests.post.assert_called_with('fake_comment_url',
+                                              auth=('fake_user', 'fake_pass'),
+                                              data=expected_markdown_comment)
