@@ -16,9 +16,13 @@ def process_post(factory, request):
     if event_data.valid:
         comment_username = os.environ['REPORT_USERNAME']
         comment_password = os.environ['REPORT_PASSWORD']
+        hostname = os.environ['HOSTNAME']
+        port = os.environ['PORT']
+        result_address = hostname + ':' + port
 
         report_auth = Authorization(comment_username, comment_password)
-        reporter = factory.makeReporter(event_data.reporter_data, report_auth)
+        reporter = factory.makeReporter(event_data.reporter_data, report_auth,
+                                        result_address)
         runner = factory.makeRunner(os.getcwd(), event_data.runner_data,
                                     reporter)
         run_location = runner.get_run_location()

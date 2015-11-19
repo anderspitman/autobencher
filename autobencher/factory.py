@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 from .runner import ASVBenchmarkRunner
-from .reporter import ASVBenchmarkReporter
+from .reporter import ASVRemoteBenchmarkReporter
 from .event import ASVEventParser
 
 
@@ -35,9 +35,10 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
                                   data.branch_owner, reporter)
 
     @classmethod
-    def makeReporter(cls, data, report_auth):
-        return ASVBenchmarkReporter(data.result_uri, data.report_uri,
-                                    report_auth)
+    def makeReporter(cls, data, report_auth, result_address):
+        return ASVRemoteBenchmarkReporter(result_address, data.report_uri,
+                                          data.branch, data.branch_owner,
+                                          report_auth)
 
     @classmethod
     def makeEventParser(cls, event):

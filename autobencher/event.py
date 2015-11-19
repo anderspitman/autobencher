@@ -1,5 +1,3 @@
-import os
-
 from abc import ABCMeta, abstractmethod
 
 
@@ -66,14 +64,6 @@ class RunnerData(object):
 
 class ReporterData(object):
     @property
-    def result_uri(self):
-        return self._result_uri
-
-    @result_uri.setter
-    def result_uri(self, value):
-        self._result_uri = value
-
-    @property
     def report_uri(self):
         return self._report_uri
 
@@ -89,15 +79,34 @@ class ReporterData(object):
     def report_auth(self, report_auth):
         self._report_auth = report_auth
 
-    def __init__(self, result_uri=None, report_uri=None, report_auth=None):
-        self._result_uri = result_uri
-        self._report_uri = report_uri
-        self._report_auth = report_auth
+    @property
+    def branch(self):
+        return self._branch
+
+    @branch.setter
+    def branch(self, branch):
+        self._branch = branch
+
+    @property
+    def branch_owner(self):
+        return self._branch_owner
+
+    @branch_owner.setter
+    def branch_owner(self, branch_owner):
+        self._branch_owner = branch_owner
+
+    def __init__(self, report_uri=None, report_auth=None,
+                 branch=None, branch_owner=None):
+        self.report_uri = report_uri
+        self.report_auth = report_auth
+        self.branch = branch
+        self._branch_owner = branch_owner
 
     def __eq__(self, other):
-        return (self._result_uri == other._result_uri and
-                self._report_uri == other._report_uri and
-                self._report_auth == other._report_auth)
+        return (self._report_uri == other._report_uri and
+                self._report_auth == other._report_auth and
+                self._branch == other._branch and
+                self._branch_owner == other._branch_owner)
 
 
 class EventParser(metaclass=ABCMeta):
@@ -122,26 +131,21 @@ class ASVEventParser(GitHubWebhooksParser):
                                   event['action'] in ('opened', 'synchronize'))
 
         if self._event_data.valid:
-            hostname = os.environ['HOSTNAME']
-            port = os.environ['PORT']
+            branch = event['pull_request']['head']['ref']
+            branch_owner = \
+                event['pull_request']['head']['repo']['owner']['login']
 
-            server = hostname + ':' + port
-            link_parts =\
-                (server, 'runs',
-                 event['pull_request']['head']['repo']['owner']['login'],
-                 event['pull_request']['head']['ref'],
-                 'html', 'index.html')
-            self._event_data.reporter_data.result_uri = os.sep.join(link_parts)
+            self._event_data.reporter_data.branch = branch
+            self._event_data.reporter_data.branch_owner = branch_owner
             self._event_data.reporter_data.report_uri = \
                 event['pull_request']['comments_url']
+
             self._event_data.runner_data.repository_uri = \
                 event['pull_request']['head']['repo']['clone_url']
             self._event_data.runner_data.repository_base = \
                 event['pull_request']['base']['sha']
-            self._event_data.runner_data.branch = \
-                event['pull_request']['head']['ref']
-            self._event_data.runner_data.branch_owner = \
-                event['pull_request']['head']['repo']['owner']['login']
+            self._event_data.runner_data.branch = branch
+            self._event_data.runner_data.branch_owner = branch_owner
 
     def get_event_data(self):
         return self._event_data

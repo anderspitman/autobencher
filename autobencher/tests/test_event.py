@@ -14,59 +14,69 @@ class TestReporterData:
         report_user = 'fake-user'
         report_pass = 'fake-pass'
 
-        self.result_uri = '/results'
         self.report_uri = '/report'
         self.report_auth = Authorization(report_user, report_pass)
         self.reporter_data.report_auth = self.report_auth
+        self.branch = 'fake-branch'
+        self.branch_owner = 'fake-owner'
 
     def test_init_empty_all_none(self):
         obs = ReporterData()
-        assert obs.result_uri is None
         assert obs.report_uri is None
         assert obs.report_auth is None
+        assert obs.branch is None
+        assert obs.branch_owner is None
 
     def test_simple(self):
 
-        self.reporter_data.result_uri = self.result_uri
         self.reporter_data.report_uri = self.report_uri
         self.reporter_data.report_auth = self.report_auth
+        self.reporter_data.branch = self.branch
+        self.reporter_data.branch_owner = self.branch_owner
 
-        assert self.reporter_data.result_uri == '/results'
         assert self.reporter_data.report_uri == '/report'
         assert self.reporter_data.report_auth == self.report_auth
+        assert self.reporter_data.branch == self.branch
+        assert self.reporter_data.branch_owner == self.branch_owner
 
     def test_formal_parameters(self):
-        observed = ReporterData(self.result_uri, self.report_uri,
-                                self.report_auth)
-        assert observed.result_uri == self.result_uri
+        observed = ReporterData(self.report_uri, self.report_auth, self.branch,
+                                self.branch_owner)
         assert observed.report_uri == self.report_uri
         assert observed.report_auth == self.report_auth
+        assert observed.branch == self.branch
+        assert observed.branch_owner == self.branch_owner
 
     def test_eq_empty(self):
         obs1 = ReporterData()
         obs2 = ReporterData()
         assert obs1 == obs2
 
-    def test_eq_different_results_uri(self):
-        obs1 = ReporterData('different', self.report_uri, self.report_auth)
-        obs2 = ReporterData(self.result_uri, self.report_uri, self.report_auth)
+    def test_eq_different_report_uri(self):
+        obs1 = ReporterData(report_uri=self.report_uri)
+        obs2 = ReporterData(report_uri='different')
         assert obs1 != obs2
 
-    def test_eq_different_report_uri(self):
-        obs1 = ReporterData(self.result_uri, 'different', self.report_auth)
-        obs2 = ReporterData(self.result_uri, self.report_uri, self.report_auth)
+    def test_eq_different_branch(self):
+        obs1 = ReporterData(branch=self.branch)
+        obs2 = ReporterData(branch='different')
+        assert obs1 != obs2
+
+    def test_eq_different_branch_owner(self):
+        obs1 = ReporterData(branch_owner=self.branch_owner)
+        obs2 = ReporterData(branch_owner='different')
         assert obs1 != obs2
 
     def test_eq_different_auth_user(self):
         auth = Authorization('different', self.report_auth.password)
-        obs1 = ReporterData(self.result_uri, self.report_uri, auth)
-        obs2 = ReporterData(self.result_uri, self.report_uri, self.report_auth)
+        obs1 = ReporterData(report_auth=self.report_auth)
+        obs2 = ReporterData(report_auth=auth)
         assert obs1 != obs2
 
     def test_eq_different_auth_pass(self):
         auth = Authorization(self.report_auth.username, 'different')
-        obs1 = ReporterData(self.result_uri, self.report_uri, auth)
-        obs2 = ReporterData(self.result_uri, self.report_uri, self.report_auth)
+        obs1 = ReporterData(report_auth=self.report_auth)
+        obs2 = ReporterData(report_auth=auth)
         assert obs1 != obs2
 
 
@@ -186,9 +196,8 @@ class TestASVEventParser:
 
         parser = ASVEventParser(event)
         event_data = parser.get_event_data()
-        exp_result_uri = ('192.168.0.1:8000/runs/dummy_login/'
-                          'branch/html/index.html')
-        exp_reporter_data = ReporterData(exp_result_uri, report_uri)
+        exp_reporter_data = ReporterData(report_uri=report_uri,
+                                         branch=branch, branch_owner=login)
         exp_runner_data = RunnerData(repository_uri, repository_base, branch,
                                      branch_owner=login)
 
