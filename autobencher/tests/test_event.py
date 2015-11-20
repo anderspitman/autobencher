@@ -1,7 +1,8 @@
 import testing_import_hack
 
 from autobencher.event import (RunnerData, ReporterData, EventData,
-                               ASVEventParser)
+                               GitHubStatusEventParser,
+                               GitHubCommentEventParser)
 from autobencher.util import Authorization
 
 
@@ -159,13 +160,47 @@ class TestEventData:
         assert self.event_data.runner_data is not None
 
 
-class TestASVEventParser:
-    def setup_method(self, test_method):
-        pass
+class TestGitHubStatusEventParser:
+    def test_simple(self):
+        repository_uri = 'dummy_clone_url'
+        login = 'dummy_login'
+        branch = 'branch'
+        repository_base = 'asdfasdf'
 
-    def test_formal_parameters(self):
-        event = {}
-        ASVEventParser(event)
+        report_uri = 'dummy_comment_url'
+
+        event = {
+            'action': 'opened',
+            'pull_request': {
+                'head': {
+                    'repo': {
+                        'clone_url': repository_uri,
+                        'owner': {
+                            'login': login
+                        }
+                    },
+                    'ref': branch
+                },
+                'statuses_url': report_uri,
+                'base': {
+                    'sha': repository_base
+                }
+            }
+        }
+
+        parser = GitHubStatusEventParser(event)
+        event_data = parser.get_event_data()
+        exp_reporter_data = ReporterData(report_uri=report_uri,
+                                         branch=branch, branch_owner=login)
+        exp_runner_data = RunnerData(repository_uri, repository_base, branch,
+                                     branch_owner=login)
+
+        assert event_data.valid
+        assert event_data.reporter_data == exp_reporter_data
+        assert event_data.runner_data == exp_runner_data
+
+
+class TestASVEventParser:
 
     def test_simple(self):
         repository_uri = 'dummy_clone_url'
@@ -194,7 +229,7 @@ class TestASVEventParser:
             }
         }
 
-        parser = ASVEventParser(event)
+        parser = GitHubCommentEventParser(event)
         event_data = parser.get_event_data()
         exp_reporter_data = ReporterData(report_uri=report_uri,
                                          branch=branch, branch_owner=login)

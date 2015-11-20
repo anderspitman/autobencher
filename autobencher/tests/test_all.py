@@ -7,7 +7,8 @@ from autobencher.event import EventData
 from autobencher.server import process_post
 from autobencher.factory import BenchmarkerFactory
 from autobencher.util import Authorization
-from autobencher.reporter import (GitHubReporter, ASVBenchmarkReporter,
+from autobencher.reporter import (GitHubStatusReporter, GitHubCommentReporter,
+                                  ASVBenchmarkReporter,
                                   ASVRemoteBenchmarkReporter)
 
 
@@ -60,7 +61,7 @@ class TestAutobencherPost:
                     },
                     'ref': branch
                 },
-                'comments_url': report_uri,
+                'statuses_url': report_uri,
                 'base': {
                     'sha': repository_base
                 }
@@ -168,7 +169,23 @@ class TestASVRemoteBenchmarkReporter:
              '--delete'])
 
 
-class TestGitHubReporter:
+class TestGitHubStatusReporter:
+    def setup_method(self, test_method):
+        self.result_uri = 'result_uri'
+        self.report_uri = 'fake_status_url'
+        self.report_user = 'fake_user'
+        self.report_pass = 'fake_pass'
+        self.report_auth = Authorization(self.report_user, self.report_pass)
+
+    @patch('autobencher.reporter.requests', autospec=True)
+    def test_formal_parameters(self, mock_requests):
+        rep = GitHubStatusReporter(self.result_uri, self.report_uri,
+                                   '', '', self.report_auth)
+        rep.report()
+        assert mock_requests.post.called
+
+
+class TestGitHubCommentReporter:
     def setup_method(self, test_method):
         self.result_uri = 'result_uri'
         self.report_uri = 'fake_comment_url'
@@ -182,48 +199,48 @@ class TestGitHubReporter:
         self.factory = BenchmarkerFactory.makeFactory()
 
     def test_eq_simple(self):
-        rep1 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', self.report_auth)
-        rep2 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', self.report_auth)
+        rep1 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', self.report_auth)
+        rep2 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', self.report_auth)
         assert rep1 == rep2
 
     def test_eq_different_result_uri(self):
-        rep1 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', self.report_auth)
+        rep1 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', self.report_auth)
         self.event_data.reporter_data.result_uri = 'different'
-        rep2 = GitHubReporter(self.event_data.reporter_data.result_uri,
-                              '', '', self.report_uri, self.report_auth)
+        rep2 = GitHubCommentReporter(self.event_data.reporter_data.result_uri,
+                                     '', '', self.report_uri, self.report_auth)
         assert rep1 != rep2
 
     def test_eq_different_report_uri(self):
-        rep1 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', self.report_auth)
+        rep1 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', self.report_auth)
         self.report_uri = 'different'
-        rep2 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', self.report_auth)
+        rep2 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', self.report_auth)
         assert rep1 != rep2
 
     def test_eq_different_auth_user(self):
-        rep1 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', self.report_auth)
+        rep1 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', self.report_auth)
         auth = Authorization('different', self.report_auth.password)
-        rep2 = GitHubReporter(self.event_data.reporter_data.result_uri,
-                              '', '', self.report_uri, auth)
+        rep2 = GitHubCommentReporter(self.event_data.reporter_data.result_uri,
+                                     '', '', self.report_uri, auth)
         assert rep1 != rep2
 
     def test_eq_different_auth_pass(self):
-        rep1 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', self.report_auth)
+        rep1 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', self.report_auth)
         auth = Authorization(self.report_auth.username, 'different')
-        rep2 = GitHubReporter(self.result_uri, self.report_uri,
-                              '', '', auth)
+        rep2 = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                     '', '', auth)
         assert rep1 != rep2
 
     @patch('autobencher.reporter.requests', autospec=True)
     def test_comment_report(self, mock_requests):
-        rep = GitHubReporter(self.result_uri, self.report_uri,
-                             '', '', self.report_auth)
+        rep = GitHubCommentReporter(self.result_uri, self.report_uri,
+                                    '', '', self.report_auth)
         expected_markdown_comment = ('{"body": "## Automated report\\n'
                                      'Benchmark run completed successfully. '
                                      'Results available [here](https://'
