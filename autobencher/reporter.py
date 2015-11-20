@@ -17,11 +17,10 @@ class BenchmarkReporter(metaclass=ABCMeta):
 
 
 class GitHubReporter(BenchmarkReporter):
-    def __init__(self, result_uri, report_uri, branch, branch_owner,
-                 report_auth):
-        self._comments_url = report_uri
-        self._comment_username = report_auth.username
-        self._comment_password = report_auth.password
+    def __init__(self, report_uri, branch, branch_owner, report_auth):
+        self._report_uri = report_uri
+        self._report_username = report_auth.username
+        self._report_password = report_auth.password
 
         s3_host = 'https://s3-us-west-2.amazonaws.com'
         s3_link_parts = (s3_host, 'scikit-bio.org', 'benchmarks',
@@ -36,38 +35,69 @@ class GitHubReporter(BenchmarkReporter):
 
     def __eq__(self, other):
         return (self._result_link == other._result_link and
-                self._comments_url == other._comments_url and
-                self._comment_username == other._comment_username and
-                self._comment_password == other._comment_password)
+                self._report_uri == other._report_uri and
+                self._report_username == other._report_username and
+                self._report_password == other._report_password)
+
+    @abstractmethod
+    def report(self):
+        """Abstract method for reporting"""
+
+
+class GitHubStatusReporter(GitHubReporter):
+    def __init__(self, result_uri, report_uri, branch, branch_owner,
+                 report_auth):
+
+        super(GitHubStatusReporter, self).__init__(
+            report_uri, branch, branch_owner, report_auth)
+
+    def report(self):
+        params = {
+            'state': 'success',
+            'target_url': self._result_link,
+            'description': "ASV benchmark run completed successfully",
+            'context': "ASV Benchmarks"
+        }
+
+        requests.post(self._report_uri, data=json.dumps(params),
+                      auth=(self._report_username, self._report_password))
+
+
+class GitHubCommentReporter(GitHubReporter):
+    def __init__(self, result_uri, report_uri, branch, branch_owner,
+                 report_auth):
+
+        super(GitHubCommentReporter, self).__init__(
+            report_uri, branch, branch_owner, report_auth)
 
     def report(self):
 
-        self._delete_old_comments()
+        self._delete_old_report_comments()
 
         comment_body = ("## Automated report\nBenchmark run "
                         "completed successfully. Results available [here]"
                         "(%s)") % (self._result_link)
         params = {'body': comment_body}
-        requests.post(self._comments_url, data=json.dumps(params),
-                      auth=(self._comment_username, self._comment_password))
+        requests.post(self._report_uri, data=json.dumps(params),
+                      auth=(self._report_username, self._report_password))
 
-    def _delete_old_comments(self):
+    def _delete_old_report_comments(self):
         comments = self._get_comments()
         for comment in comments:
             author = comment['user']['login']
-            if author == self._comment_username:
+            if author == self._report_username:
                 self._delete_comment(comment['url'])
 
     def _get_comments(self):
-        response = requests.get(self._comments_url)
+        response = requests.get(self._report_uri)
         return response.json()
 
     def _delete_comment(self, comment_url):
         requests.delete(comment_url,
-                        auth=(self._comment_username, self._comment_password))
+                        auth=(self._report_username, self._report_password))
 
 
-class ASVBenchmarkReporter(GitHubReporter):
+class ASVBenchmarkReporter(GitHubStatusReporter):
     def report(self):
         self._publish()
         super(ASVBenchmarkReporter, self).report()

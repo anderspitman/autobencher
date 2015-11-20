@@ -121,11 +121,6 @@ class EventParser(metaclass=ABCMeta):
 
 class GitHubWebhooksParser(EventParser):
     def __init__(self, event):
-        """Abstract constructor"""
-
-
-class ASVEventParser(GitHubWebhooksParser):
-    def __init__(self, event):
         self._event_data = EventData()
         self._event_data.valid = ('pull_request' in event and
                                   event['action'] in ('opened', 'synchronize'))
@@ -137,8 +132,6 @@ class ASVEventParser(GitHubWebhooksParser):
 
             self._event_data.reporter_data.branch = branch
             self._event_data.reporter_data.branch_owner = branch_owner
-            self._event_data.reporter_data.report_uri = \
-                event['pull_request']['comments_url']
 
             self._event_data.runner_data.repository_uri = \
                 event['pull_request']['head']['repo']['clone_url']
@@ -149,3 +142,25 @@ class ASVEventParser(GitHubWebhooksParser):
 
     def get_event_data(self):
         return self._event_data
+
+
+class GitHubCommentEventParser(GitHubWebhooksParser):
+    def __init__(self, event):
+        super(GitHubCommentEventParser, self).__init__(event)
+
+        if self._event_data.valid:
+            self._event_data.reporter_data.report_uri = \
+                event['pull_request']['comments_url']
+
+
+class GitHubStatusEventParser(GitHubWebhooksParser):
+    def __init__(self, event):
+        super(GitHubStatusEventParser, self).__init__(event)
+
+        if self._event_data.valid:
+            self._event_data.reporter_data.report_uri = \
+                event['pull_request']['statuses_url']
+
+
+class ASVEventParser(GitHubStatusEventParser):
+    pass
