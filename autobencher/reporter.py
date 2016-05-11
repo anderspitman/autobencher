@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import asv
 
 from subprocess import check_call
 from abc import ABCMeta, abstractmethod
@@ -52,15 +53,18 @@ class GitHubStatusReporter(GitHubReporter):
             report_uri, branch, branch_owner, report_auth)
 
     def report(self):
-        params = {
-            'state': 'success',
+        params = self._build_params('success')
+
+        requests.post(self._report_uri, data=json.dumps(params),
+                      auth=(self._report_username, self._report_password))
+
+    def _build_params(self, success_string):
+        return {
+            'state': success_string,
             'target_url': self._result_link,
             'description': "ASV benchmark run completed successfully",
             'context': "ASV Benchmarks"
         }
-
-        requests.post(self._report_uri, data=json.dumps(params),
-                      auth=(self._report_username, self._report_password))
 
 
 class GitHubCommentReporter(GitHubReporter):
@@ -100,11 +104,70 @@ class GitHubCommentReporter(GitHubReporter):
 class ASVBenchmarkReporter(GitHubStatusReporter):
     def report(self):
         self._publish()
-        super(ASVBenchmarkReporter, self).report()
+
+        path = 'results'
+
+        results_list = list(asv.results.iter_results(path)) 
+
+        regression = False
+        if len(results_list) > 0:
+
+            # first commit chronologically should be master; last should be the
+            # tip of the branch
+            results_list = sorted(results_list, key=lambda result: result.date)
+            master_commit_hash = results_list[0].commit_hash
+            tip_commit_hash = results_list[-1].commit_hash
+
+            master_results = {}
+            tip_results = {}
+
+            for results in asv.results.iter_results(path):
+                for key, val in results.params.items():
+                    configuration = \
+                        self._generate_unique_configuration_string(results)
+                    
+                    if results.commit_hash == master_commit_hash:
+                        if configuration not in master_results:
+                            master_results[configuration] = results.results
+                    elif results.commit_hash == tip_commit_hash:
+                        if configuration not in tip_results:
+                            tip_results[configuration] = results.results
+
+            for configuration in tip_results:
+                for benchmark, value in tip_results[configuration].items():
+                    # if this benchmark exists on master
+                    if benchmark in master_results[configuration]:
+                        master_val = master_results[configuration][benchmark]
+                        tip_val = value
+                        regression = self._has_regression(master_val, tip_val)
+                        
+                        if regression:
+                            break
+                if regression:
+                    break
+
+        if regression:
+            params = {
+                'state': 'failure',
+                'target_url': self._result_link,
+                'description': "ASV benchmark run detected a regression",
+                'context': "ASV Benchmarks"
+            }
+            res = requests.post(self._report_uri, data=json.dumps(params),
+                          auth=(self._report_username, self._report_password))
+
+        else:
+            super(ASVBenchmarkReporter, self).report()
 
     def _publish(self):
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
+
+    def _generate_unique_configuration_string(self, results):
+        return results._env_name
+
+    def _has_regression(self, master_val, tip_val):
+        return ((tip_val - master_val) / master_val) > .2
 
 
 class ASVRemoteBenchmarkReporter(ASVBenchmarkReporter):
