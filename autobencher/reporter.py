@@ -105,6 +105,14 @@ class GitHubCommentReporter(GitHubReporter):
         requests.post(self._report_uri, data=json.dumps(params),
                       auth=(self._report_username, self._report_password))
 
+    def report_started(self):
+        self._delete_old_report_comments()
+
+        comment_body = "## Automated report\nBenchmark run started"
+        params = {'body': comment_body}
+        requests.post(self._report_uri, data=json.dumps(params),
+                      auth=(self._report_username, self._report_password))
+
     def _delete_old_report_comments(self):
         comments = self._get_comments()
         for comment in comments:
