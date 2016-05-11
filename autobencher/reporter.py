@@ -74,7 +74,6 @@ class GitHubStatusReporter(GitHubReporter):
             'context': "ASV Benchmarks"
         }
 
-
         requests.post(self._report_uri, data=json.dumps(params),
                       auth=(self._report_username, self._report_password))
 
@@ -135,7 +134,7 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
 
         path = 'results'
 
-        results_list = list(asv.results.iter_results(path)) 
+        results_list = list(asv.results.iter_results(path))
 
         regression = False
         if len(results_list) > 0:
@@ -153,7 +152,7 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
                 for key, val in results.params.items():
                     configuration = \
                         self._generate_unique_configuration_string(results)
-                    
+
                     if results.commit_hash == master_commit_hash:
                         if configuration not in master_results:
                             master_results[configuration] = results.results
@@ -168,7 +167,7 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
                         master_val = master_results[configuration][benchmark]
                         tip_val = value
                         regression = self._has_regression(master_val, tip_val)
-                        
+
                         if regression:
                             break
                 if regression:
@@ -181,7 +180,7 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
                 'description': "ASV benchmark run detected a regression",
                 'context': "ASV Benchmarks"
             }
-            res = requests.post(self._report_uri, data=json.dumps(params),
+            requests.post(self._report_uri, data=json.dumps(params),
                           auth=(self._report_username, self._report_password))
 
         else:
