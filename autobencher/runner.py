@@ -59,6 +59,7 @@ class ASVProcess(Process):
         return self._branch_dir
 
     def _run_asv(self):
+        self._reporter.report_started()
         self._set_up_environment()
         # include 1 previous commit from master so we can see any regressions
         commit_range = self._base_commit + '~1..' + self._branch_ref

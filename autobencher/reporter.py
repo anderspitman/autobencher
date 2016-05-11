@@ -16,6 +16,10 @@ class BenchmarkReporter(metaclass=ABCMeta):
     def report(self):
         """Abstract method for reporting"""
 
+    @abstractmethod
+    def report_started(self):
+        """Abstract method for reporting benchmarking started"""
+
 
 class GitHubReporter(BenchmarkReporter):
     def __init__(self, report_uri, branch, branch_owner, report_auth):
@@ -44,6 +48,10 @@ class GitHubReporter(BenchmarkReporter):
     def report(self):
         """Abstract method for reporting"""
 
+    @abstractmethod
+    def report_started(self):
+        """Abstract method for reporting benchmarking started"""
+
 
 class GitHubStatusReporter(GitHubReporter):
     def __init__(self, result_uri, report_uri, branch, branch_owner,
@@ -54,6 +62,18 @@ class GitHubStatusReporter(GitHubReporter):
 
     def report(self):
         params = self._build_params('success')
+
+        requests.post(self._report_uri, data=json.dumps(params),
+                      auth=(self._report_username, self._report_password))
+
+    def report_started(self):
+        """Abstract method for reporting benchmarking started"""
+        params = {
+            'state': 'pending',
+            'description': "ASV benchmark run started",
+            'context': "ASV Benchmarks"
+        }
+
 
         requests.post(self._report_uri, data=json.dumps(params),
                       auth=(self._report_username, self._report_password))
