@@ -1,7 +1,6 @@
 import os
 import json
 import requests
-import asv
 
 from subprocess import check_call
 from abc import ABCMeta, abstractmethod
@@ -134,31 +133,32 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
 
         path = 'results'
 
-        results_list = list(asv.results.iter_results(path))
+        results_list = list(self._iter_results(path))
 
         regression = False
         if len(results_list) > 0:
 
             # first commit chronologically should be master; last should be the
             # tip of the branch
-            results_list = sorted(results_list, key=lambda result: result.date)
-            master_commit_hash = results_list[0].commit_hash
-            tip_commit_hash = results_list[-1].commit_hash
+            results_list = sorted(results_list,
+                                  key=lambda result: result['date'])
+            master_commit_hash = results_list[0]['commit_hash']
+            tip_commit_hash = results_list[-1]['commit_hash']
 
             master_results = {}
             tip_results = {}
 
-            for results in asv.results.iter_results(path):
-                for key, val in results.params.items():
+            for results in self._iter_results(path):
+                for key, val in results['params'].items():
                     configuration = \
                         self._generate_unique_configuration_string(results)
 
-                    if results.commit_hash == master_commit_hash:
+                    if results['commit_hash'] == master_commit_hash:
                         if configuration not in master_results:
-                            master_results[configuration] = results.results
-                    elif results.commit_hash == tip_commit_hash:
+                            master_results[configuration] = results['results']
+                    elif results['commit_hash'] == tip_commit_hash:
                         if configuration not in tip_results:
-                            tip_results[configuration] = results.results
+                            tip_results[configuration] = results['results']
 
             for configuration in tip_results:
                 for benchmark, value in tip_results[configuration].items():
@@ -191,10 +191,23 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
         check_call(asv_publish_command)
 
     def _generate_unique_configuration_string(self, results):
-        return results._env_name
+        return results['env_name']
 
     def _has_regression(self, master_val, tip_val):
         return ((tip_val - master_val) / master_val) > .2
+
+    # this method was adapted from asv's codebase, in the results.py file
+    def _iter_results(self, results_dir):
+        skip_files = set([
+            'machine.json', 'benchmarks.json'
+        ])
+        for root, dirs, files in os.walk(results_dir):
+            for filename in files:
+                if filename not in skip_files and filename.endswith('.json'):
+                    path = os.path.join(root, filename)
+                    with open(path) as json_file:
+                        data = json.load(json_file)
+                        yield data
 
 
 class ASVRemoteBenchmarkReporter(ASVBenchmarkReporter):
