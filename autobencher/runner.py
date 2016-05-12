@@ -20,8 +20,8 @@ class BenchmarkRunner(metaclass=ABCMeta):
            working"""
 
 class ASVMasterBenchmarkRunner(BenchmarkRunner):
-    def __init__(self, directory, repo_uri):
-        self._asv_proc = ASVMasterProcess(directory, repo_uri)
+    def __init__(self, directory, repo_uri, publisher):
+        self._asv_proc = ASVMasterProcess(directory, repo_uri, publisher)
 
     def run(self):
         self._asv_proc.start()
@@ -32,12 +32,12 @@ class ASVMasterBenchmarkRunner(BenchmarkRunner):
 
 class ASVBenchmarkRunner(BenchmarkRunner):
     def __init__(self, directory, repo_uri, repo_base, branch, branch_owner,
-                 reporter):
+                 reporter, publisher):
         # Start a new process. This is necessary since we need to change
         # the working directory for ASV to work, but we also need to be able
         # to handle concurrent ASV runs.
         self._asv_proc = ASVProcess(directory, repo_uri, repo_base, branch,
-                                    branch_owner, reporter)
+                                    branch_owner, reporter, publisher)
 
     def run(self):
         self._asv_proc.start()
@@ -86,9 +86,10 @@ class RunnerProcess(Process):
 
 
 class ASVMasterProcess(RunnerProcess):
-    def __init__(self, directory, repo_uri):
+    def __init__(self, directory, repo_uri, publisher):
 
         self._branch_ref = 'master'
+        self._publisher = publisher
 
         super(ASVMasterProcess, self).__init__(directory, repo_uri)
 
@@ -103,6 +104,8 @@ class ASVMasterProcess(RunnerProcess):
         asv_command = ['asv', 'run', 'NEW']
         return_code = call(asv_command)
 
+        self._publisher.publish('master')
+
         os.chdir(self._dir)
 
     def _set_branch_dir(self):
@@ -112,7 +115,7 @@ class ASVMasterProcess(RunnerProcess):
 
 class ASVProcess(RunnerProcess):
     def __init__(self, directory, repo_uri, repo_base, branch,
-                 branch_owner, reporter):
+                 branch_owner, reporter, publisher):
 
         self._owner = branch_owner
         self._branch_ref = branch
@@ -122,6 +125,7 @@ class ASVProcess(RunnerProcess):
         self._base_commit = repo_base
 
         self._reporter = reporter
+        self._publisher = publisher
 
     def run(self):
         self._run_asv()
@@ -139,6 +143,9 @@ class ASVProcess(RunnerProcess):
         asv_command = ['asv', 'run', '--steps', '10', commit_range]
         check_call(asv_command)
         self._reporter.report()
+        publish_dest = '/'.join(['pull_requests', self._owner,
+                                 self._branch_ref])
+        self._publisher.publish(publish_dest)
 
         os.chdir(self._dir)
 

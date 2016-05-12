@@ -214,11 +214,3 @@ class ASVRemoteBenchmarkReporter(ASVBenchmarkReporter):
     def _publish(self):
 
         super(ASVRemoteBenchmarkReporter, self)._publish()
-
-        s3_upload_url_parts = ('s3://scikit-bio.org', 'benchmarks',
-                               'pull_requests', self._branch_owner,
-                               self._branch)
-        s3_upload_url = os.sep.join(s3_upload_url_parts)
-        upload_to_s3_command = ['aws', 's3', 'sync', 'html', s3_upload_url,
-                                '--delete']
-        check_call(upload_to_s3_command)
