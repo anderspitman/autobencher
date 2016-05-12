@@ -168,6 +168,19 @@ class TestASVRemoteBenchmarkReporter:
               'branch_name'),
              '--delete'])
 
+        url = ("https://s3-us-west-2.amazonaws.com/scikit-bio.org/benchmarks/"
+               "pull_requests/branch_owner/branch_name/index.html")
+        params = {
+            'state': 'success',
+            'target_url': url,
+            'description': "ASV benchmark run completed successfully",
+            'context': "ASV Benchmarks"
+        }
+        mock_requests.post.assert_called_with(self.report_uri,
+                                              data=json.dumps(params),
+                                              auth=(self.report_user,
+                                                    self.report_pass))
+
 
 class TestGitHubStatusReporter:
     def setup_method(self, test_method):
