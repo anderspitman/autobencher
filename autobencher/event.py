@@ -5,6 +5,7 @@ class EventData(object):
     def __init__(self):
         self.reporter_data = ReporterData()
         self.runner_data = RunnerData()
+        self.is_master_update = False
 
     @property
     def valid(self):
@@ -13,6 +14,14 @@ class EventData(object):
     @valid.setter
     def valid(self, value):
         self._valid = value
+
+    @property
+    def is_master_update(self):
+        return self._is_master_update
+
+    @is_master_update.setter
+    def is_master_update(self, value):
+        self._is_master_update = value
 
 
 class RunnerData(object):
@@ -122,10 +131,10 @@ class EventParser(metaclass=ABCMeta):
 class GitHubWebhooksParser(EventParser):
     def __init__(self, event):
         self._event_data = EventData()
-        self._event_data.valid = ('pull_request' in event and
-                                  event['action'] in ('opened', 'synchronize'))
+        self._event_data.valid = self._event_is_valid(event)
 
         if self._event_data.valid:
+            self._event_data.is_master_update = self._is_valid_merge(event)
             branch = event['pull_request']['head']['ref']
             branch_owner = \
                 event['pull_request']['head']['repo']['owner']['login']
@@ -142,6 +151,19 @@ class GitHubWebhooksParser(EventParser):
 
     def get_event_data(self):
         return self._event_data
+
+    def _is_valid_merge(self, event):
+        valid_merge = ('pull_request' in event and
+                       event['action'] == 'closed' and
+                       event['pull_request']['merged'])
+        return valid_merge
+
+
+    def _event_is_valid(self, event):
+        valid_pr = ('pull_request' in event and
+                    event['action'] in ('opened', 'synchronize'))
+        return valid_pr or self._is_valid_merge(event)
+           
 
 
 class GitHubCommentEventParser(GitHubWebhooksParser):

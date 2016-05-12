@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from .runner import ASVBenchmarkRunner
+from .runner import ASVBenchmarkRunner, ASVMasterBenchmarkRunner
 from .reporter import ASVRemoteBenchmarkReporter
 from .event import ASVEventParser
 
@@ -10,6 +10,11 @@ class BenchmarkerFactory(metaclass=ABCMeta):
     @abstractmethod
     def makeRunner(cls):
         """Abstract method for creating runners"""
+
+    @classmethod
+    @abstractmethod
+    def make_master_runner(cls):
+        """Abstract method for creating master runners"""
 
     @classmethod
     @abstractmethod
@@ -27,6 +32,10 @@ class BenchmarkerFactory(metaclass=ABCMeta):
 
 
 class ASVBenchmarkerFactory(BenchmarkerFactory):
+
+    @classmethod
+    def make_master_runner(cls, directory, data):
+        return ASVMasterBenchmarkRunner(directory, data.repository_uri)
 
     @classmethod
     def makeRunner(cls, directory, data, reporter):
