@@ -33,18 +33,18 @@ class TestAutobencherPost:
         pass
 
     @patch('autobencher.server.Authorization', autospec=True)
+    @patch('autobencher.factory.ASVPublisher', autospec=True)
     @patch('autobencher.factory.ASVRemoteBenchmarkReporter', autospec=True)
     @patch('autobencher.factory.ASVBenchmarkRunner', autospec=True)
     def test_post(self, MockASVBenchmarkRunner, MockASVBenchmarkReporter,
-                  MockAuthorization):
+                  MockASVPublisher, MockAuthorization):
         repository_uri = 'dummy_clone_url'
         login = 'dummy_login'
         branch = 'branch'
         repository_base = 'asdfasdf'
 
-        hostname = '192.168.0.1'
+        publish_uri = 's3:somethin-somethin'
         port = str(8000)
-        server = hostname + ':' + port
         report_uri = 'dummy_comment_url'
         report_username = 'dummy_comment_user'
         report_password = 'dummy_comment_pass'
@@ -69,7 +69,7 @@ class TestAutobencherPost:
         }
         request = RequestDouble
         request.body = json.dumps(event).encode()
-        os.environ['HOSTNAME'] = hostname
+        os.environ['PUBLISH_URI'] = publish_uri 
         os.environ['PORT'] = port
         os.environ['REPORT_USERNAME'] = report_username
         os.environ['REPORT_PASSWORD'] = report_password
@@ -79,16 +79,17 @@ class TestAutobencherPost:
 
         mock_report_auth = MockAuthorization.return_value
         mock_reporter = MockASVBenchmarkReporter.return_value
+        mock_publisher = MockASVPublisher.return_value
         mock_runner = MockASVBenchmarkRunner.return_value
 
         MockASVBenchmarkRunner.assert_called_with(
             os.getcwd(), repository_uri, repository_base, branch, login,
-            mock_reporter)
+            mock_reporter, mock_publisher)
         assert mock_runner.get_run_location.called
         assert mock_runner.run.called
 
         MockASVBenchmarkReporter.assert_called_with(
-            server, report_uri, branch, login, mock_report_auth)
+            publish_uri, report_uri, branch, login, mock_report_auth)
 
 
 class TestMakeReporter:
@@ -158,28 +159,29 @@ class TestASVRemoteBenchmarkReporter:
                                           self.report_auth)
         rep1.report()
         mock_check_call.assert_any_call(['asv', 'publish'])
-        mock_check_call.assert_called_with(
-            ['aws',
-             's3',
-             'sync',
-             'html',
-             ('s3://scikit-bio.org/benchmarks/'
-              'pull_requests/branch_owner/'
-              'branch_name'),
-             '--delete'])
+        # TODO: move to publisher test
+        #mock_check_call.assert_called_with(
+        #    ['aws',
+        #     's3',
+        #     'sync',
+        #     'html',
+        #     ('s3://scikit-bio.org/benchmarks/'
+        #      'pull_requests/branch_owner/'
+        #      'branch_name'),
+        #     '--delete'])
 
-        url = ("https://s3-us-west-2.amazonaws.com/scikit-bio.org/benchmarks/"
-               "pull_requests/branch_owner/branch_name/index.html")
-        params = {
-            'state': 'success',
-            'target_url': url,
-            'description': "ASV benchmark run completed successfully",
-            'context': "ASV Benchmarks"
-        }
-        mock_requests.post.assert_called_with(self.report_uri,
-                                              data=json.dumps(params),
-                                              auth=(self.report_user,
-                                                    self.report_pass))
+        #url = ("https://s3-us-west-2.amazonaws.com/scikit-bio.org/benchmarks/"
+        #       "pull_requests/branch_owner/branch_name/index.html")
+        #params = {
+        #    'state': 'success',
+        #    'target_url': url,
+        #    'description': "ASV benchmark run completed successfully",
+        #    'context': "ASV Benchmarks"
+        #}
+        #mock_requests.post.assert_called_with(self.report_uri,
+        #                                      data=json.dumps(params),
+        #                                      auth=(self.report_user,
+        #                                            self.report_pass))
 
 
 class TestGitHubStatusReporter:
