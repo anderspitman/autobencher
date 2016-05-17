@@ -1,8 +1,9 @@
 from abc import ABCMeta, abstractmethod
 
-from .runner import ASVBenchmarkRunner
+from .runner import ASVBenchmarkRunner, ASVMasterBenchmarkRunner
 from .reporter import ASVRemoteBenchmarkReporter
 from .event import ASVEventParser
+from .publisher import ASVPublisher
 
 
 class BenchmarkerFactory(metaclass=ABCMeta):
@@ -10,6 +11,11 @@ class BenchmarkerFactory(metaclass=ABCMeta):
     @abstractmethod
     def makeRunner(cls):
         """Abstract method for creating runners"""
+
+    @classmethod
+    @abstractmethod
+    def make_master_runner(cls):
+        """Abstract method for creating master runners"""
 
     @classmethod
     @abstractmethod
@@ -22,6 +28,11 @@ class BenchmarkerFactory(metaclass=ABCMeta):
         """Abstract method for creating event parsers"""
 
     @classmethod
+    @abstractmethod
+    def make_publisher(cls):
+        """Abstract method"""
+
+    @classmethod
     def makeFactory(cls):
         return ASVBenchmarkerFactory()
 
@@ -29,10 +40,15 @@ class BenchmarkerFactory(metaclass=ABCMeta):
 class ASVBenchmarkerFactory(BenchmarkerFactory):
 
     @classmethod
-    def makeRunner(cls, directory, data, reporter):
+    def make_master_runner(cls, directory, data, publisher):
+        return ASVMasterBenchmarkRunner(directory, data.repository_uri,
+                                        publisher)
+
+    @classmethod
+    def makeRunner(cls, directory, data, reporter, publisher):
         return ASVBenchmarkRunner(directory, data.repository_uri,
                                   data.repository_base, data.branch,
-                                  data.branch_owner, reporter)
+                                  data.branch_owner, reporter, publisher)
 
     @classmethod
     def makeReporter(cls, data, report_auth, result_address):
@@ -43,3 +59,7 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
     @classmethod
     def makeEventParser(cls, event):
         return ASVEventParser(event)
+
+    @classmethod
+    def make_publisher(cls, url):
+        return ASVPublisher(url)

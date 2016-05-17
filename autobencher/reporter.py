@@ -194,7 +194,8 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
         return results['env_name']
 
     def _has_regression(self, master_val, tip_val):
-        return ((tip_val - master_val) / master_val) > .2
+        # Detect if more than 1/3 slower
+        return ((tip_val - master_val) / master_val) > .3333
 
     # this method was adapted from asv's codebase, in the results.py file
     def _iter_results(self, results_dir):
@@ -214,11 +215,3 @@ class ASVRemoteBenchmarkReporter(ASVBenchmarkReporter):
     def _publish(self):
 
         super(ASVRemoteBenchmarkReporter, self)._publish()
-
-        s3_upload_url_parts = ('s3://scikit-bio.org', 'benchmarks',
-                               'pull_requests', self._branch_owner,
-                               self._branch)
-        s3_upload_url = os.sep.join(s3_upload_url_parts)
-        upload_to_s3_command = ['aws', 's3', 'sync', 'html', s3_upload_url,
-                                '--delete']
-        check_call(upload_to_s3_command)
