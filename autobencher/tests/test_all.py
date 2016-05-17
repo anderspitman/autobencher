@@ -69,7 +69,7 @@ class TestAutobencherPost:
         }
         request = RequestDouble
         request.body = json.dumps(event).encode()
-        os.environ['PUBLISH_URI'] = publish_uri 
+        os.environ['PUBLISH_URI'] = publish_uri
         os.environ['PORT'] = port
         os.environ['REPORT_USERNAME'] = report_username
         os.environ['REPORT_PASSWORD'] = report_password
@@ -159,29 +159,30 @@ class TestASVRemoteBenchmarkReporter:
                                           self.report_auth)
         rep1.report()
         mock_check_call.assert_any_call(['asv', 'publish'])
-        # TODO: move to publisher test
-        #mock_check_call.assert_called_with(
-        #    ['aws',
-        #     's3',
-        #     'sync',
-        #     'html',
-        #     ('s3://scikit-bio.org/benchmarks/'
-        #      'pull_requests/branch_owner/'
-        #      'branch_name'),
-        #     '--delete'])
+        #  TODO: move to publisher test
+        # mock_check_call.assert_called_with(
+        #     ['aws',
+        #      's3',
+        #      'sync',
+        #      'html',
+        #      ('s3://scikit-bio.org/benchmarks/'
+        #       'pull_requests/branch_owner/'
+        #       'branch_name'),
+        #      '--delete'])
 
-        #url = ("https://s3-us-west-2.amazonaws.com/scikit-bio.org/benchmarks/"
-        #       "pull_requests/branch_owner/branch_name/index.html")
-        #params = {
-        #    'state': 'success',
-        #    'target_url': url,
-        #    'description': "ASV benchmark run completed successfully",
-        #    'context': "ASV Benchmarks"
-        #}
-        #mock_requests.post.assert_called_with(self.report_uri,
-        #                                      data=json.dumps(params),
-        #                                      auth=(self.report_user,
-        #                                            self.report_pass))
+        # url = \
+        #     ("https://s3-us-west-2.amazonaws.com/scikit-bio.org/benchmarks/"
+        #        "pull_requests/branch_owner/branch_name/index.html")
+        # params = {
+        #     'state': 'success',
+        #     'target_url': url,
+        #     'description': "ASV benchmark run completed successfully",
+        #     'context': "ASV Benchmarks"
+        # }
+        # mock_requests.post.assert_called_with(self.report_uri,
+        #                                       data=json.dumps(params),
+        #                                       auth=(self.report_user,
+        #                                             self.report_pass))
 
 
 class TestGitHubStatusReporter:

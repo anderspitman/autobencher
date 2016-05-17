@@ -19,6 +19,7 @@ class BenchmarkRunner(metaclass=ABCMeta):
         """Abstract method for getting the location where the runner is
            working"""
 
+
 class ASVMasterBenchmarkRunner(BenchmarkRunner):
     def __init__(self, directory, repo_uri, publisher):
         self._asv_proc = ASVMasterProcess(directory, repo_uri, publisher)
@@ -102,7 +103,7 @@ class ASVMasterProcess(RunnerProcess):
 
         print(os.getcwd())
         asv_command = ['asv', 'run', 'NEW']
-        return_code = call(asv_command)
+        call(asv_command)
 
         self._publisher.publish('master')
 
@@ -110,7 +111,6 @@ class ASVMasterProcess(RunnerProcess):
 
     def _set_branch_dir(self):
         self._branch_dir = os.path.join(self._run_dir, self._branch_ref)
-
 
 
 class ASVProcess(RunnerProcess):
@@ -148,7 +148,6 @@ class ASVProcess(RunnerProcess):
         self._publisher.publish(publish_dest)
 
         os.chdir(self._dir)
-
 
     def _set_branch_dir(self):
         self._branch_dir = os.path.join(self._run_dir, self._owner,

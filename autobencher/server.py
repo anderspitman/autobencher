@@ -15,7 +15,6 @@ def process_post(factory, request):
     parser = factory.makeEventParser(event)
     event_data = parser.get_event_data()
 
-
     if event_data.valid:
 
         publish_uri = os.environ['PUBLISH_URI']
@@ -34,8 +33,8 @@ def process_post(factory, request):
             report_password = os.environ['REPORT_PASSWORD']
 
             report_auth = Authorization(report_username, report_password)
-            reporter = factory.makeReporter(event_data.reporter_data, report_auth,
-                                            publish_uri)
+            reporter = factory.makeReporter(event_data.reporter_data,
+                                            report_auth, publish_uri)
             runner = factory.makeRunner(os.getcwd(), event_data.runner_data,
                                         reporter, publisher)
             run_location = runner.get_run_location()

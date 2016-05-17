@@ -158,12 +158,10 @@ class GitHubWebhooksParser(EventParser):
                        event['pull_request']['merged'])
         return valid_merge
 
-
     def _event_is_valid(self, event):
         valid_pr = ('pull_request' in event and
                     event['action'] in ('opened', 'synchronize'))
         return valid_pr or self._is_valid_merge(event)
-           
 
 
 class GitHubCommentEventParser(GitHubWebhooksParser):
