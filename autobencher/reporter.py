@@ -194,7 +194,8 @@ class ASVBenchmarkReporter(GitHubStatusReporter):
         return results['env_name']
 
     def _has_regression(self, master_val, tip_val):
-        return ((tip_val - master_val) / master_val) > .2
+        # Detect if more than 1/3 slower
+        return ((tip_val - master_val) / master_val) > .3333
 
     # this method was adapted from asv's codebase, in the results.py file
     def _iter_results(self, results_dir):
