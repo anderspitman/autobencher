@@ -1,4 +1,3 @@
-import os
 import json
 import requests
 
@@ -128,87 +127,25 @@ class GitHubCommentReporter(GitHubReporter):
 
 
 class ASVBenchmarkReporter(GitHubStatusReporter):
+    def report_success(self):
+        super(ASVBenchmarkReporter, self).report()
+
+    def report_failure(self):
+        params = {
+            'state': 'failure',
+            'target_url': self._result_link,
+            'description': "ASV benchmark run detected a regression",
+            'context': "ASV Benchmarks"
+        }
+        requests.post(self._report_uri, data=json.dumps(params),
+                      auth=(self._report_username, self._report_password))
+
     def report(self):
         self._publish()
-
-        path = 'results'
-
-        results_list = list(self._iter_results(path))
-
-        regression = False
-        if len(results_list) > 0:
-
-            # first commit chronologically should be master; last should be the
-            # tip of the branch
-            results_list = sorted(results_list,
-                                  key=lambda result: result['date'])
-            master_commit_hash = results_list[0]['commit_hash']
-            tip_commit_hash = results_list[-1]['commit_hash']
-
-            master_results = {}
-            tip_results = {}
-
-            for results in self._iter_results(path):
-                for key, val in results['params'].items():
-                    configuration = \
-                        self._generate_unique_configuration_string(results)
-
-                    if results['commit_hash'] == master_commit_hash:
-                        if configuration not in master_results:
-                            master_results[configuration] = results['results']
-                    elif results['commit_hash'] == tip_commit_hash:
-                        if configuration not in tip_results:
-                            tip_results[configuration] = results['results']
-
-            for configuration in tip_results:
-                for benchmark, value in tip_results[configuration].items():
-                    # if this benchmark exists on master
-                    if benchmark in master_results[configuration]:
-                        master_val = master_results[configuration][benchmark]
-                        tip_val = value
-                        regression = self._has_regression(master_val, tip_val)
-
-                        if regression:
-                            break
-                if regression:
-                    break
-
-        if regression:
-            params = {
-                'state': 'failure',
-                'target_url': self._result_link,
-                'description': "ASV benchmark run detected a regression",
-                'context': "ASV Benchmarks"
-            }
-            requests.post(self._report_uri, data=json.dumps(params),
-                          auth=(self._report_username, self._report_password))
-
-        else:
-            super(ASVBenchmarkReporter, self).report()
 
     def _publish(self):
         asv_publish_command = ['asv', 'publish']
         check_call(asv_publish_command)
-
-    def _generate_unique_configuration_string(self, results):
-        return results['env_name']
-
-    def _has_regression(self, master_val, tip_val):
-        # Detect if more than 1/3 slower
-        return ((tip_val - master_val) / master_val) > .3333
-
-    # this method was adapted from asv's codebase, in the results.py file
-    def _iter_results(self, results_dir):
-        skip_files = set([
-            'machine.json', 'benchmarks.json'
-        ])
-        for root, dirs, files in os.walk(results_dir):
-            for filename in files:
-                if filename not in skip_files and filename.endswith('.json'):
-                    path = os.path.join(root, filename)
-                    with open(path) as json_file:
-                        data = json.load(json_file)
-                        yield data
 
 
 class ASVRemoteBenchmarkReporter(ASVBenchmarkReporter):
