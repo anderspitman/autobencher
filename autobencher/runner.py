@@ -222,7 +222,7 @@ class ASVProcess(RunnerProcess):
 
     def _copy_master_results(self):
         master_results_dir = os.path.join(self._run_dir, 'master',
-                                          'results')
+                                          'results' + os.path.sep)
         self._results_dir = os.path.join(self._branch_dir, 'results')
         if not os.path.exists(self._results_dir):
             os.makedirs(self._results_dir)
