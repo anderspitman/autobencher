@@ -34,6 +34,14 @@ class RunnerData(object):
         self._repository_uri = value
 
     @property
+    def master_repository_uri(self):
+        return self._master_repository_uri
+
+    @master_repository_uri.setter
+    def master_repository_uri(self, value):
+        self._master_repository_uri = value
+
+    @property
     def repository_base(self):
         return self._repository_base
 
@@ -57,9 +65,10 @@ class RunnerData(object):
     def branch_owner(self, value):
         self._branch_owner = value
 
-    def __init__(self, repository_uri=None, repository_base=None, branch=None,
-                 branch_owner=None):
+    def __init__(self, repository_uri=None, master_repository_uri=None,
+                 repository_base=None, branch=None, branch_owner=None):
         self._repository_uri = repository_uri
+        self._master_repository_uri = master_repository_uri
         self._repository_base = repository_base
         self._branch = branch
         self._branch_owner = branch_owner
@@ -144,6 +153,8 @@ class GitHubWebhooksParser(EventParser):
 
             self._event_data.runner_data.repository_uri = \
                 event['pull_request']['head']['repo']['clone_url']
+            self._event_data.runner_data.master_repository_uri = \
+                event['pull_request']['base']['repo']['clone_url']
             self._event_data.runner_data.repository_base = \
                 event['pull_request']['base']['sha']
             self._event_data.runner_data.branch = branch

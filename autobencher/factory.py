@@ -47,6 +47,7 @@ class ASVBenchmarkerFactory(BenchmarkerFactory):
     @classmethod
     def makeRunner(cls, directory, data, reporter, publisher):
         return ASVBenchmarkRunner(directory, data.repository_uri,
+                                  data.master_repository_uri,
                                   data.repository_base, data.branch,
                                   data.branch_owner, reporter, publisher)
 

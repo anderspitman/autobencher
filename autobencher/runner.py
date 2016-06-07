@@ -33,13 +33,14 @@ class ASVMasterBenchmarkRunner(BenchmarkRunner):
 
 
 class ASVBenchmarkRunner(BenchmarkRunner):
-    def __init__(self, directory, repo_uri, repo_base, branch, branch_owner,
-                 reporter, publisher):
+    def __init__(self, directory, repo_uri, master_repo_uri, repo_base,
+                 branch, branch_owner, reporter, publisher):
         # Start a new process. This is necessary since we need to change
         # the working directory for ASV to work, but we also need to be able
         # to handle concurrent ASV runs.
-        self._asv_proc = ASVProcess(directory, repo_uri, repo_base, branch,
-                                    branch_owner, reporter, publisher)
+        self._asv_proc = ASVProcess(directory, repo_uri, master_repo_uri,
+                                    repo_base, branch, branch_owner,
+                                    reporter, publisher)
 
     def run(self):
         self._asv_proc.start()
@@ -114,13 +115,17 @@ class ASVMasterProcess(RunnerProcess):
 
 
 class ASVProcess(RunnerProcess):
-    def __init__(self, directory, repo_uri, repo_base, branch,
+    def __init__(self, directory, repo_uri, master_repo_uri, repo_base, branch,
                  branch_owner, reporter, publisher):
 
         self._owner = branch_owner
         self._branch_ref = branch
 
         super(ASVProcess, self).__init__(directory, repo_uri)
+
+        master_repo_path = os.path.join(self._branch_dir, 'master_repo')
+        self._master_repo = SourceRepository.makeRepository(
+            master_repo_uri, 'master', master_repo_path)
 
         self._base_commit = repo_base
         self._results_dir = os.path.join(self._branch_dir, 'results')
@@ -141,8 +146,11 @@ class ASVProcess(RunnerProcess):
 
         self._copy_master_results()
 
+        newest_common_commit = self._newest_common_commit()
+
         # run for commits after master
-        asv_command = ['asv', 'run', 'NEW']
+        commit_range = newest_common_commit + '..' + self._branch_ref
+        asv_command = ['asv', 'run', commit_range]
         call(asv_command)
 
         if not self._has_regressions():
@@ -168,7 +176,7 @@ class ASVProcess(RunnerProcess):
             # tip of the branch
             results_list = sorted(results_list,
                                   key=lambda result: result['date'])
-            master_commit_hash = self._base_commit
+            master_commit_hash = self._newest_common_commit()
             tip_commit_hash = results_list[-1]['commit_hash']
 
             master_results = {}
@@ -200,6 +208,15 @@ class ASVProcess(RunnerProcess):
                     break
 
         return regression
+
+    def _newest_common_commit(self):
+        master_commits = self._master_repo.get_commit_hashes()
+        branch_commits = self._repo.get_commit_hashes(self._branch_ref)
+
+        for commit in branch_commits:
+            if commit in master_commits:
+                return commit
+        return None
 
     # this method was adapted from asv's codebase, in the results.py file
     def _iter_results(self, results_dir):
