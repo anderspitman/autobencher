@@ -63,7 +63,10 @@ class TestAutobencherPost:
                 },
                 'statuses_url': report_uri,
                 'base': {
-                    'sha': repository_base
+                    'sha': repository_base,
+                    'repo': {
+                        'clone_url': repository_uri,
+                    }
                 }
             }
         }
@@ -83,7 +86,8 @@ class TestAutobencherPost:
         mock_runner = MockASVBenchmarkRunner.return_value
 
         MockASVBenchmarkRunner.assert_called_with(
-            os.getcwd(), repository_uri, repository_base, branch, login,
+            os.getcwd(), repository_uri, repository_uri,
+            repository_base, branch, login,
             mock_reporter, mock_publisher)
         assert mock_runner.get_run_location.called
         assert mock_runner.run.called

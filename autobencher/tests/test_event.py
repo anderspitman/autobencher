@@ -110,7 +110,7 @@ class TestRunnerData:
         assert self.runner_data.branch_owner == self.branch_owner
 
     def test_formal_parameters(self):
-        obs = RunnerData(self.repo_uri, self.repo_base,
+        obs = RunnerData(self.repo_uri, self.repo_base, self.repo_base,
                          self.branch, self.branch_owner)
         assert obs.repository_uri == self.repo_uri
         assert obs.repository_base == self.repo_base
@@ -183,7 +183,10 @@ class TestGitHubStatusEventParser:
                 },
                 'statuses_url': report_uri,
                 'base': {
-                    'sha': repository_base
+                    'sha': repository_base,
+                    'repo': {
+                        'clone_url': repository_uri,
+                    }
                 }
             }
         }
@@ -192,7 +195,8 @@ class TestGitHubStatusEventParser:
         event_data = parser.get_event_data()
         exp_reporter_data = ReporterData(report_uri=report_uri,
                                          branch=branch, branch_owner=login)
-        exp_runner_data = RunnerData(repository_uri, repository_base, branch,
+        exp_runner_data = RunnerData(repository_uri, repository_uri,
+                                     repository_base, branch,
                                      branch_owner=login)
 
         assert event_data.valid
@@ -224,7 +228,10 @@ class TestASVEventParser:
                 },
                 'comments_url': report_uri,
                 'base': {
-                    'sha': repository_base
+                    'sha': repository_base,
+                    'repo': {
+                        'clone_url': repository_uri,
+                    }
                 }
             }
         }
@@ -233,7 +240,8 @@ class TestASVEventParser:
         event_data = parser.get_event_data()
         exp_reporter_data = ReporterData(report_uri=report_uri,
                                          branch=branch, branch_owner=login)
-        exp_runner_data = RunnerData(repository_uri, repository_base, branch,
+        exp_runner_data = RunnerData(repository_uri, repository_uri,
+                                     repository_base, branch,
                                      branch_owner=login)
 
         assert event_data.valid

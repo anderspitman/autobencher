@@ -75,6 +75,8 @@ class RunnerData(object):
 
     def __eq__(self, other):
         return (self._repository_uri == other._repository_uri and
+                self._master_repository_uri ==
+                other._master_repository_uri and
                 self._repository_base == other._repository_base and
                 self._branch == other._branch and
                 self._branch_owner == other._branch_owner)
