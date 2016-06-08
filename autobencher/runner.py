@@ -149,7 +149,7 @@ class ASVProcess(RunnerProcess):
         newest_common_commit = self._newest_common_commit()
 
         # run for commits after master
-        commit_range = newest_common_commit + '..' + self._branch_ref
+        commit_range = newest_common_commit + '~1..' + self._branch_ref
         asv_command = ['asv', 'run', commit_range]
         call(asv_command)
 
@@ -183,16 +183,15 @@ class ASVProcess(RunnerProcess):
             tip_results = {}
 
             for results in self._iter_results(path):
-                for key, val in results['params'].items():
-                    configuration = \
-                        self._generate_unique_configuration_string(results)
+                configuration = \
+                    self._generate_unique_configuration_string(results)
 
-                    if results['commit_hash'] == master_commit_hash:
-                        if configuration not in master_results:
-                            master_results[configuration] = results['results']
-                    elif results['commit_hash'] == tip_commit_hash:
-                        if configuration not in tip_results:
-                            tip_results[configuration] = results['results']
+                if results['commit_hash'] == master_commit_hash:
+                    if configuration not in master_results:
+                        master_results[configuration] = results['results']
+                elif results['commit_hash'] == tip_commit_hash:
+                    if configuration not in tip_results:
+                        tip_results[configuration] = results['results']
 
             for configuration in tip_results:
                 for benchmark, value in tip_results[configuration].items():
